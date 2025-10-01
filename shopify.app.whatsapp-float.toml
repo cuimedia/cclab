@@ -1,0 +1,21 @@
+# shopify.app.whatsapp-float.toml
+
+client_id = "437477591e78677478825f6ba18475ce"
+name = "whatsapp-float"
+application_url = "https://127.0.0.1:3000"   # 本地开发地址
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "ng-dev-2.myshopify.com"
+
+[webhooks]
+api_version = "2025-10"   # 也可用 2025-07/2025-04，任选一个有效版本
+
+[access_scopes]
+# 我们要写 shop.metafields → 需要这两个；后续要写 customer metafields 再加 read_customers,write_customers
+scopes = "read_metafields, write_metafields"
+
+[auth]
+# Remix 模板默认回调；用 127.0.0.1（配合 mkcert）
+redirect_urls = ["https://127.0.0.1:3000/auth/callback"]
