@@ -1,13 +1,11 @@
-# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-
-client_id = "d8d158126a8bf732f0c4454354326e51"
+# shopify.app.toml
+client_id = "437477591e78677478825f6ba18475ce"
 name = "whatsapp-float"
-application_url = "https://example.com"
+application_url = "https://cclab-f120.onrender.com/app"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-include_config_on_deploy = true
 
 [webhooks]
 api_version = "2025-10"
@@ -16,13 +14,9 @@ api_version = "2025-10"
   topics = [ "app/uninstalled" ]
   uri = "/webhooks/app/uninstalled"
 
-  [[webhooks.subscriptions]]
-  topics = [ "app/scopes_update" ]
-  uri = "/webhooks/app/scopes_update"
-
-[access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+# ❌ 不要 access_scopes（或保持空字符串）
+# [access_scopes]
+# scopes = ""
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = ["https://cclab-f120.onrender.com/auth/callback"]

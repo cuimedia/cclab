@@ -1,26 +1,14 @@
-{%- comment -%} WhatsApp Float — App Embed (metafield-driven) {%- endcomment -%}
-
-{%- assign cfg_json = shop.metafields.wa_float.config | default: '' -%}
-{%- assign page_type = request.page_type -%}
-
-{%- if cfg_json != '' -%}
-  <link rel="stylesheet" href="{{ 'whatsapp-float.css' | asset_url }}">
-
-  <div id="wa-float-root"
-       data-config='{{ cfg_json | escape }}'
-       data-page='{{ page_type }}'
-       aria-hidden="true"></div>
-
-  <script src="{{ 'whatsapp-float.js' | asset_url }}" defer></script>
-{%- endif -%}
-
 {% schema %}
 {
-  "name": "WhatsApp Floating Button",
-  "target": "body",
-  "enabled_on": { "templates": ["*"] },
+  "name": "WhatsApp Float",
+  "target": "section",
   "settings": [
-    { "type": "paragraph", "content": "Turn this on here. Configure all options inside the app (Apps → whatsapp-float → Settings)." }
+    { "type": "checkbox", "id": "enabled", "label": "Enable", "default": true }
   ]
 }
 {% endschema %}
+
+{% if block.settings.enabled %}
+  <div id="wa-float-root"></div>
+  <script defer src="https://cclab-f120.onrender.com/wa-float.js?shop={{ shop.permanent_domain }}"></script>
+{% endif %}
