@@ -1,5 +1,4 @@
-# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-
+# Production config for Render deployment
 client_id = "437477591e78677478825f6ba18475ce"
 name = "whatsapp-float"
 application_url = "https://cclab-f12o.onrender.com"
@@ -16,4 +15,4 @@ api_version = "2025-01"
   uri = "/webhooks/app/uninstalled"
 
 [auth]
-redirect_urls = [ "https://cclab-f12o.onrender.com/auth/callback" ]
+redirect_urls = ["https://cclab-f12o.onrender.com/auth/callback"]

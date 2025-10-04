@@ -30,3 +30,10 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+// Store per-shop WhatsApp Float configuration as JSON for flexibility
+model WaFloatConfig {
+  shop      String   @id
+  config    Json
+  updatedAt DateTime @updatedAt
+}

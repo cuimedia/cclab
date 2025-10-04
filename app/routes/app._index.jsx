@@ -1,3 +1,4 @@
+import { redirect } from "@remix-run/node";
 import { useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 import {
@@ -17,8 +18,7 @@ import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
   await authenticate.admin(request);
-
-  return null;
+  return redirect("/app/settings");
 };
 
 export const action = async ({ request }) => {

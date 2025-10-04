@@ -3,23 +3,26 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { admin } = await authenticate.admin(request);
-  const q = `#graphql
-    query { shop { id metafield(namespace:"wa_float", key:"config"){ value } } }`;
-  const r = await admin.graphql(q);
-  const j = await r.json();
-  let cfg = {};
-  try { cfg = JSON.parse(j.data.shop.metafield?.value || "{}"); } catch {}
-  return json({ cfg });
+  const r = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
+  const shop = (await r.json()).data.shop.myshopifyDomain as string;
+  const row = await prisma.waFloatConfig.findUnique({ where: { shop } });
+  let cfg: any = {};
+  try { cfg = (row?.config as any) || {}; } catch {}
+  return json({ cfg, shop });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const { admin } = await authenticate.admin(request);
+  const domainResp = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
+  const shop = (await domainResp.json()).data.shop.myshopifyDomain as string;
+
   const form = await request.formData();
   const cfg = {
-    number: String(form.get("number") || "").replace(/\D/g,""),
+    number: String(form.get("number") || "").replace(/\D/g, ""),
     message: String(form.get("message") || ""),
     position: form.get("position") === "left" ? "left" : "right",
     offset_x: Number(form.get("offset_x") || 24),
@@ -28,39 +31,22 @@ export async function action({ request }: ActionFunctionArgs) {
     bg_color: String(form.get("bg_color") || "#25D366"),
     icon_color: String(form.get("icon_color") || "#ffffff"),
     open_in_new: form.get("open_in_new") === "on",
-    show_on_mobile: form.get("show_on_mobile") !== null,   // 默认勾上
-    show_on_desktop: form.get("show_on_desktop") !== null, // 默认勾上
-    show_everywhere: form.get("show_everywhere") !== null, // 默认勾上
+    show_on_mobile: form.get("show_on_mobile") !== null,
+    show_on_desktop: form.get("show_on_desktop") !== null,
+    show_everywhere: form.get("show_everywhere") !== null,
     show_on_home: form.get("show_on_home") !== null,
     show_on_product: form.get("show_on_product") !== null,
     show_on_collection: form.get("show_on_collection") !== null,
     show_on_article: form.get("show_on_article") !== null,
     show_on_cart: form.get("show_on_cart") !== null,
-  };
+  } as any;
 
-  const shopIdResp = await admin.graphql(`#graphql{ shop { id } }`);
-  const shopId = (await shopIdResp.json()).data.shop.id;
+  await prisma.waFloatConfig.upsert({
+    where: { shop },
+    create: { shop, config: cfg },
+    update: { config: cfg },
+  });
 
-  const m = `#graphql
-    mutation Set($mf:[MetafieldsSetInput!]!){
-      metafieldsSet(metafields:$mf){
-        userErrors{message}
-      }
-    }`;
-  const variables = {
-    mf: [{
-      ownerId: shopId,
-      namespace: "wa_float",
-      key: "config",
-      type: "json",
-      value: JSON.stringify(cfg),
-    }],
-  };
-  const resp = await admin.graphql(m, { variables });
-  const data = await resp.json();
-  if (data.data.metafieldsSet.userErrors?.length) {
-    throw new Error(JSON.stringify(data.data.metafieldsSet.userErrors));
-  }
   return redirect("/app/settings?saved=1");
 }
 

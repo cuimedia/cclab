@@ -1,0 +1,16 @@
+{%- comment -%} WhatsApp Float — App Embed (App settings driven) {%- endcomment -%}
+
+{% schema %}
+{
+  "name": "WhatsApp Float",
+  "target": "body",
+  "settings": [
+    { "type": "checkbox", "id": "enabled", "label": "Enable", "default": true },
+    { "type": "paragraph", "content": "Configure options inside the app (Apps → whatsapp-float → Settings)." }
+  ]
+}
+{% endschema %}
+
+{% if block.settings.enabled %}
+  <script defer src="https://cclab-f12o.onrender.com/public/wa-float-bundle?shop={{ shop.permanent_domain }}"></script>
+{% endif %}
