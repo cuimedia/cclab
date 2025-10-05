@@ -1,6 +1,6 @@
-// Ensure /auth (no suffix) starts the OAuth flow using shopify.login
 import { login } from "../shopify.server";
 
 export const loader = async ({ request }) => {
   return login(request);
 };
+
