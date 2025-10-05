@@ -18,7 +18,9 @@ import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
   await authenticate.admin(request);
-  return redirect("/app/settings");
+  const url = new URL(request.url);
+  const search = url.search || ""; // preserve shop/host/embedded params
+  return redirect(`/app/settings${search}`);
 };
 
 export const action = async ({ request }) => {
