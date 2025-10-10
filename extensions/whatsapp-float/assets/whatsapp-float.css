@@ -1,3 +1,0 @@
-/* Base reserved for future enhancements (e.g., pulse animation) */
-#wa-floating-btn { outline: none; text-decoration: none; }
-#wa-floating-btn:focus { box-shadow: 0 0 0 3px rgba(37, 211, 102, .35); }
