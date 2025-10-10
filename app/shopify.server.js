@@ -11,12 +11,14 @@ const parsedScopes = (process.env.SCOPES || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+const scopesOption = parsedScopes.length > 0 ? parsedScopes : undefined;
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.January25,
-  scopes: parsedScopes,
+  // Only send scopes when non-empty to avoid Shopify rejecting empty scope param
+  ...(scopesOption ? { scopes: scopesOption } : {}),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
