@@ -2,6 +2,18 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
+import { useState } from "react";
+import {
+  Banner,
+  Button,
+  Card,
+  Checkbox,
+  FormLayout,
+  Layout,
+  Page,
+  Select,
+  TextField,
+} from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
@@ -97,85 +109,197 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Settings() {
   const { cfg, saved } = useLoaderData<typeof loader>();
+  const initialValues = {
+    number: cfg.number || "",
+    message: cfg.message || "Hello, I need some help with my order.",
+    position: cfg.position || "right",
+    size: String(cfg.size || 56),
+    offset_x: String(cfg.offset_x ?? 24),
+    offset_y: String(cfg.offset_y ?? 24),
+    bg_color: cfg.bg_color || "#25D366",
+    icon_color: cfg.icon_color || "#ffffff",
+    open_in_new: cfg.open_in_new ?? true,
+    show_on_mobile: cfg.show_on_mobile ?? true,
+    show_on_desktop: cfg.show_on_desktop ?? true,
+    show_everywhere: cfg.show_everywhere ?? true,
+    show_on_home: cfg.show_on_home ?? true,
+    show_on_product: cfg.show_on_product ?? true,
+    show_on_collection: cfg.show_on_collection ?? true,
+    show_on_article: cfg.show_on_article ?? false,
+    show_on_cart: cfg.show_on_cart ?? true,
+  };
+
+  const [formState, setFormState] = useState(initialValues);
+
+  const updateField =
+    (field: keyof typeof initialValues) => (value: string) =>
+      setFormState((prev) => ({ ...prev, [field]: value }));
+
+  const updateCheckbox =
+    (field: keyof typeof initialValues) => (value: boolean) =>
+      setFormState((prev) => ({ ...prev, [field]: value }));
+
   return (
-    <div style={{padding:"16px", maxWidth: 780}}>
-      <h1 style={{fontSize: 22, marginBottom: 12}}>WhatsApp 浮窗设置</h1>
-      {saved && (
-        <div style={{background:"#eaf5ff", border:"1px solid #b3d4ff", padding:"8px 12px", borderRadius:4, marginBottom:12, color:"#0c4a78"}}>
-          设置已保存。
-        </div>
-      )}
-      <Form method="post">
-        <fieldset style={{border:"1px solid #eee", padding:12, marginBottom:12}}>
-          <legend>基本</legend>
-          <label>WhatsApp 号码（E.164 纯数字，不带+）
-            <input name="number" defaultValue={cfg.number || ""} required
-                   style={{width:"100%", padding:8, marginTop:4}} />
-          </label>
-          <label style={{display:"block", marginTop:12}}>预填消息
-            <textarea name="message" rows={3}
-              defaultValue={cfg.message || "Hello, I need some help with my order."}
-              style={{width:"100%", padding:8, marginTop:4}}/>
-          </label>
-        </fieldset>
+    <Page title="WhatsApp 浮窗设置">
+      <Layout>
+        <Layout.Section>
+          {saved && (
+            <Banner status="success" title="设置已保存">
+              已根据最新配置更新浮窗。
+            </Banner>
+          )}
+          <Card sectioned>
+            <Form method="post">
+              <FormLayout>
+                <FormLayout.Group>
+                  <TextField
+                    label="WhatsApp 号码（E.164 纯数字，不带+）"
+                    name="number"
+                    value={formState.number}
+                    onChange={updateField("number")}
+                    autoComplete="tel"
+                    requiredIndicator
+                  />
+                  <Select
+                    label="按钮位置"
+                    name="position"
+                    options={[
+                      { label: "右下", value: "right" },
+                      { label: "左下", value: "left" },
+                    ]}
+                    value={formState.position}
+                    onChange={updateField("position")}
+                  />
+                </FormLayout.Group>
 
-        <fieldset style={{border:"1px solid #eee", padding:12, marginBottom:12}}>
-          <legend>外观与位置</legend>
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
-            <label>位置
-              <select name="position" defaultValue={cfg.position || "right"}
-                      style={{width:"100%", padding:8, marginTop:4}}>
-                <option value="right">右下</option>
-                <option value="left">左下</option>
-              </select>
-            </label>
-            <label>尺寸(px)
-              <select name="size" defaultValue={String(cfg.size || 56)}
-                      style={{width:"100%", padding:8, marginTop:4}}>
-                <option value="48">48</option><option value="56">56</option><option value="64">64</option>
-              </select>
-            </label>
-            <label>横向偏移 X
-              <input type="number" name="offset_x" min={0} max={80}
-                     defaultValue={cfg.offset_x ?? 24}
-                     style={{width:"100%", padding:8, marginTop:4}}/>
-            </label>
-            <label>纵向偏移 Y
-              <input type="number" name="offset_y" min={0} max={100}
-                     defaultValue={cfg.offset_y ?? 24}
-                     style={{width:"100%", padding:8, marginTop:4}}/>
-            </label>
-            <label>背景色（#HEX）
-              <input name="bg_color" defaultValue={cfg.bg_color || "#25D366"}
-                     style={{width:"100%", padding:8, marginTop:4}}/>
-            </label>
-            <label>图标色（#HEX）
-              <input name="icon_color" defaultValue={cfg.icon_color || "#ffffff"}
-                     style={{width:"100%", padding:8, marginTop:4}}/>
-            </label>
-          </div>
-        </fieldset>
+                <TextField
+                  label="预填消息"
+                  name="message"
+                  value={formState.message}
+                  onChange={updateField("message")}
+                  multiline={4}
+                />
 
-        <fieldset style={{border:"1px solid #eee", padding:12, marginBottom:12}}>
-          <legend>行为</legend>
-          <label><input type="checkbox" name="open_in_new" defaultChecked={cfg.open_in_new ?? true}/> 新窗口打开</label><br/>
-          <label><input type="checkbox" name="show_on_mobile" defaultChecked={cfg.show_on_mobile ?? true}/> 在移动端显示</label><br/>
-          <label><input type="checkbox" name="show_on_desktop" defaultChecked={cfg.show_on_desktop ?? true}/> 在桌面端显示</label>
-        </fieldset>
+                <FormLayout.Group>
+                  <Select
+                    label="尺寸"
+                    name="size"
+                    options={[
+                      { label: "48 px", value: "48" },
+                      { label: "56 px", value: "56" },
+                      { label: "64 px", value: "64" },
+                    ]}
+                    value={formState.size}
+                    onChange={updateField("size")}
+                  />
+                  <TextField
+                    label="横向偏移 X"
+                    name="offset_x"
+                    type="number"
+                    min={0}
+                    max={80}
+                    value={formState.offset_x}
+                    onChange={updateField("offset_x")}
+                  />
+                  <TextField
+                    label="纵向偏移 Y"
+                    name="offset_y"
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={formState.offset_y}
+                    onChange={updateField("offset_y")}
+                  />
+                </FormLayout.Group>
 
-        <fieldset style={{border:"1px solid #eee", padding:12, marginBottom:12}}>
-          <legend>显示页面</legend>
-          <label><input type="checkbox" name="show_everywhere" defaultChecked={cfg.show_everywhere ?? true}/> 全站显示</label><br/>
-          <label><input type="checkbox" name="show_on_home" defaultChecked={cfg.show_on_home ?? true}/> 首页</label><br/>
-          <label><input type="checkbox" name="show_on_product" defaultChecked={cfg.show_on_product ?? true}/> 商品页</label><br/>
-          <label><input type="checkbox" name="show_on_collection" defaultChecked={cfg.show_on_collection ?? true}/> 集合页</label><br/>
-          <label><input type="checkbox" name="show_on_article" defaultChecked={cfg.show_on_article ?? false}/> 博文页</label><br/>
-          <label><input type="checkbox" name="show_on_cart" defaultChecked={cfg.show_on_cart ?? true}/> 购物车页</label>
-        </fieldset>
+                <FormLayout.Group>
+                  <TextField
+                    label="背景色（#HEX）"
+                    name="bg_color"
+                    value={formState.bg_color}
+                    onChange={updateField("bg_color")}
+                  />
+                  <TextField
+                    label="图标色（#HEX）"
+                    name="icon_color"
+                    value={formState.icon_color}
+                    onChange={updateField("icon_color")}
+                  />
+                </FormLayout.Group>
 
-        <button type="submit" style={{padding:"10px 16px"}}>保存设置</button>
-        <p style={{marginTop:10,color:"#666"}}>提示：主题编辑器只需开启 App embed；其余设置都在此页面管理。</p>
-      </Form>
-    </div>
+                <FormLayout.Group>
+                  <Checkbox
+                    label="新窗口打开"
+                    name="open_in_new"
+                    checked={formState.open_in_new}
+                    onChange={updateCheckbox("open_in_new")}
+                  />
+                  <Checkbox
+                    label="在移动端显示"
+                    name="show_on_mobile"
+                    checked={formState.show_on_mobile}
+                    onChange={updateCheckbox("show_on_mobile")}
+                  />
+                  <Checkbox
+                    label="在桌面端显示"
+                    name="show_on_desktop"
+                    checked={formState.show_on_desktop}
+                    onChange={updateCheckbox("show_on_desktop")}
+                  />
+                </FormLayout.Group>
+
+                <FormLayout.Group>
+                  <Checkbox
+                    label="全站显示"
+                    name="show_everywhere"
+                    checked={formState.show_everywhere}
+                    onChange={updateCheckbox("show_everywhere")}
+                  />
+                  <Checkbox
+                    label="首页"
+                    name="show_on_home"
+                    checked={formState.show_on_home}
+                    onChange={updateCheckbox("show_on_home")}
+                    disabled={formState.show_everywhere}
+                  />
+                  <Checkbox
+                    label="商品页"
+                    name="show_on_product"
+                    checked={formState.show_on_product}
+                    onChange={updateCheckbox("show_on_product")}
+                    disabled={formState.show_everywhere}
+                  />
+                  <Checkbox
+                    label="集合页"
+                    name="show_on_collection"
+                    checked={formState.show_on_collection}
+                    onChange={updateCheckbox("show_on_collection")}
+                    disabled={formState.show_everywhere}
+                  />
+                  <Checkbox
+                    label="博文页"
+                    name="show_on_article"
+                    checked={formState.show_on_article}
+                    onChange={updateCheckbox("show_on_article")}
+                    disabled={formState.show_everywhere}
+                  />
+                  <Checkbox
+                    label="购物车页"
+                    name="show_on_cart"
+                    checked={formState.show_on_cart}
+                    onChange={updateCheckbox("show_on_cart")}
+                    disabled={formState.show_everywhere}
+                  />
+                </FormLayout.Group>
+
+                <Button submit primary>
+                  保存设置
+                </Button>
+              </FormLayout>
+            </Form>
+          </Card>
+        </Layout.Section>
+      </Layout>
+    </Page>
   );
 }
