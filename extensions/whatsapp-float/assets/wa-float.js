@@ -74,9 +74,9 @@
 
       var svgNS = 'http://www.w3.org/2000/svg';
       var svg = document.createElementNS(svgNS, 'svg');
-      svg.setAttribute('viewBox', '0 0 32 32');
-      svg.setAttribute('width', Math.floor(size * 0.55));
-      svg.setAttribute('height', Math.floor(size * 0.55));
+      svg.setAttribute('viewBox', '0 0 448 512');
+      svg.setAttribute('width', Math.floor(size * 0.7));
+      svg.setAttribute('height', Math.floor(size * 0.7));
       svg.setAttribute('aria-hidden', 'true');
       var path = document.createElementNS(svgNS, 'path');
       path.setAttribute('fill', icon);
