@@ -2,18 +2,23 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Banner,
   Button,
   Card,
   Checkbox,
+  ColorPicker,
+  ColorSwatch,
   FormLayout,
+  InlineStack,
   Layout,
   Page,
+  Popover,
   Select,
   TextField,
 } from "@shopify/polaris";
+import { hexToRgb, rgbToHsb, hsbToHex } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
@@ -131,6 +136,30 @@ export default function Settings() {
 
   const [formState, setFormState] = useState(initialValues);
 
+  const colorDefaults = {
+    hue: 150,
+    saturation: 0.6,
+    brightness: 0.8,
+  };
+
+  const makeColorState = (hex: string) => {
+    const rgb = hexToRgb(hex);
+    return rgb ? rgbToHsb(rgb) : colorDefaults;
+  };
+
+  const [bgPicker, setBgPicker] = useState(() => makeColorState(initialValues.bg_color));
+  const [iconPicker, setIconPicker] = useState(() => makeColorState(initialValues.icon_color));
+  const [bgPopoverActive, setBgPopoverActive] = useState(false);
+  const [iconPopoverActive, setIconPopoverActive] = useState(false);
+
+  useEffect(() => {
+    setBgPicker(makeColorState(formState.bg_color));
+  }, [formState.bg_color]);
+
+  useEffect(() => {
+    setIconPicker(makeColorState(formState.icon_color));
+  }, [formState.icon_color]);
+
   const updateField =
     (field: keyof typeof initialValues) => (value: string) =>
       setFormState((prev) => ({ ...prev, [field]: value }));
@@ -214,17 +243,76 @@ export default function Settings() {
 
                 <FormLayout.Group>
                   <TextField
-                    label="背景色（#HEX）"
+                    label="背景色"
                     name="bg_color"
                     value={formState.bg_color}
-                    onChange={updateField("bg_color")}
+                    onChange={(hex) => {
+                      updateField("bg_color")(hex);
+                      setBgPicker(makeColorState(hex));
+                    }}
+                    autoComplete="off"
                   />
+                  <Popover
+                    active={bgPopoverActive}
+                    activator={
+                      <Button onClick={() => setBgPopoverActive((prev) => !prev)}>
+                        <InlineStack gap="200" blockAlign="center">
+                          <ColorSwatch color={formState.bg_color} size="medium" />
+                          <span>选择颜色</span>
+                        </InlineStack>
+                      </Button>
+                    }
+                    onClose={() => setBgPopoverActive(false)}
+                  >
+                    <Card padding="400">
+                      <ColorPicker
+                        color={bgPicker}
+                        onChange={(color) => {
+                          setBgPicker(color);
+                          const hex = hsbToHex(color);
+                          setFormState((prev) => ({ ...prev, bg_color: hex }));
+                        }}
+                        allowAlpha={false}
+                      />
+                    </Card>
+                  </Popover>
+                </FormLayout.Group>
+
+                <FormLayout.Group>
                   <TextField
-                    label="图标色（#HEX）"
+                    label="图标色"
                     name="icon_color"
                     value={formState.icon_color}
-                    onChange={updateField("icon_color")}
+                    onChange={(hex) => {
+                      updateField("icon_color")(hex);
+                      setIconPicker(makeColorState(hex));
+                    }}
+                    autoComplete="off"
                   />
+                  <Popover
+                    active={iconPopoverActive}
+                    activator={
+                      <Button onClick={() => setIconPopoverActive((prev) => !prev)}>
+                        <InlineStack gap="200" blockAlign="center">
+                          <ColorSwatch color={formState.icon_color} size="medium" />
+                          <span>选择颜色</span>
+                        </InlineStack>
+                      </Button>
+                    }
+                    onClose={() => setIconPopoverActive(false)}
+                  >
+                    <Card padding="400">
+                      <ColorPicker
+                        color={iconPicker}
+                        onChange={(color) => {
+                          setIconPicker(color);
+                          const hex = hsbToHex(color);
+                          setFormState((prev) => ({ ...prev, icon_color: hex }));
+                        }}
+                        allowAlpha={false}
+                      />
+                    </Card>
+                  </Popover>
                 </FormLayout.Group>
 
                 <FormLayout.Group>
