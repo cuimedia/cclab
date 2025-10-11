@@ -9,6 +9,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { admin } = await authenticate.admin(request);
 
   try {
+    const url = new URL(request.url);
     const r = await admin.graphql(`
       #graphql
       query ShopDomain {
@@ -30,7 +31,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const row = await prisma.waFloatConfig.findUnique({ where: { shop } });
     let cfg: any = {};
     try { cfg = (row?.config as any) || {}; } catch {}
-    return json({ cfg, shop });
+    const saved = url.searchParams.get("saved") === "1";
+    return json({ cfg, shop, saved });
   } catch (err) {
     console.error("settings loader error", err);
     throw err;
@@ -94,10 +96,15 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Settings() {
-  const { cfg } = useLoaderData<typeof loader>();
+  const { cfg, saved } = useLoaderData<typeof loader>();
   return (
     <div style={{padding:"16px", maxWidth: 780}}>
       <h1 style={{fontSize: 22, marginBottom: 12}}>WhatsApp 浮窗设置</h1>
+      {saved && (
+        <div style={{background:"#eaf5ff", border:"1px solid #b3d4ff", padding:"8px 12px", borderRadius:4, marginBottom:12, color:"#0c4a78"}}>
+          设置已保存。
+        </div>
+      )}
       <Form method="post">
         <fieldset style={{border:"1px solid #eee", padding:12, marginBottom:12}}>
           <legend>基本</legend>
