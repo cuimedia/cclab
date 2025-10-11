@@ -12,5 +12,8 @@
 {% endschema %}
 
 {% if block.settings.enabled %}
-  <script defer src="https://cclab-f12o.onrender.com/public/wa-float-bundle?shop={{ shop.permanent_domain }}"></script>
+  <script>
+    window.__WA_FLOAT_SHOP__ = "{{ shop.permanent_domain }}";
+  </script>
+  <script defer src="{{ 'wa-float.js' | asset_url }}"></script>
 {% endif %}
