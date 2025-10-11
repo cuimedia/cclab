@@ -17,3 +17,7 @@ api_version = "2025-01"
 
 [auth]
 redirect_urls = [ "https://cclab-f12o.onrender.com/auth/callback" ]
+
+[access_scopes]
+scopes = "read_products"
+
