@@ -7,47 +7,76 @@ import prisma from "../db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { admin } = await authenticate.admin(request);
-  const r = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
-  const shop = (await r.json()).data.shop.myshopifyDomain as string;
-  const row = await prisma.waFloatConfig.findUnique({ where: { shop } });
-  let cfg: any = {};
-  try { cfg = (row?.config as any) || {}; } catch {}
-  return json({ cfg, shop });
+
+  try {
+    const r = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
+    const payload = await r.json();
+    if (payload.errors?.length) {
+      console.error("loader shop query errors", JSON.stringify(payload.errors, null, 2));
+      throw new Error(payload.errors.map((e: any) => e.message).join("; "));
+    }
+    const shop = payload.data?.shop?.myshopifyDomain as string | undefined;
+    if (!shop) {
+      throw new Error("loader: missing shop domain in GraphQL response");
+    }
+
+    const row = await prisma.waFloatConfig.findUnique({ where: { shop } });
+    let cfg: any = {};
+    try { cfg = (row?.config as any) || {}; } catch {}
+    return json({ cfg, shop });
+  } catch (err) {
+    console.error("settings loader error", err);
+    throw err;
+  }
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const { admin } = await authenticate.admin(request);
-  const domainResp = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
-  const shop = (await domainResp.json()).data.shop.myshopifyDomain as string;
 
-  const form = await request.formData();
-  const cfg = {
-    number: String(form.get("number") || "").replace(/\D/g, ""),
-    message: String(form.get("message") || ""),
-    position: form.get("position") === "left" ? "left" : "right",
-    offset_x: Number(form.get("offset_x") || 24),
-    offset_y: Number(form.get("offset_y") || 24),
-    size: Number(form.get("size") || 56),
-    bg_color: String(form.get("bg_color") || "#25D366"),
-    icon_color: String(form.get("icon_color") || "#ffffff"),
-    open_in_new: form.get("open_in_new") === "on",
-    show_on_mobile: form.get("show_on_mobile") !== null,
-    show_on_desktop: form.get("show_on_desktop") !== null,
-    show_everywhere: form.get("show_everywhere") !== null,
-    show_on_home: form.get("show_on_home") !== null,
-    show_on_product: form.get("show_on_product") !== null,
-    show_on_collection: form.get("show_on_collection") !== null,
-    show_on_article: form.get("show_on_article") !== null,
-    show_on_cart: form.get("show_on_cart") !== null,
-  } as any;
+  try {
+    const domainResp = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
+    const payload = await domainResp.json();
+    if (payload.errors?.length) {
+      console.error("action shop query errors", JSON.stringify(payload.errors, null, 2));
+      throw new Error(payload.errors.map((e: any) => e.message).join("; "));
+    }
+    const shop = payload.data?.shop?.myshopifyDomain as string | undefined;
+    if (!shop) {
+      throw new Error("action: missing shop domain in GraphQL response");
+    }
 
-  await prisma.waFloatConfig.upsert({
-    where: { shop },
-    create: { shop, config: cfg },
-    update: { config: cfg },
-  });
+    const form = await request.formData();
+    const cfg = {
+      number: String(form.get("number") || "").replace(/\D/g, ""),
+      message: String(form.get("message") || ""),
+      position: form.get("position") === "left" ? "left" : "right",
+      offset_x: Number(form.get("offset_x") || 24),
+      offset_y: Number(form.get("offset_y") || 24),
+      size: Number(form.get("size") || 56),
+      bg_color: String(form.get("bg_color") || "#25D366"),
+      icon_color: String(form.get("icon_color") || "#ffffff"),
+      open_in_new: form.get("open_in_new") === "on",
+      show_on_mobile: form.get("show_on_mobile") !== null,
+      show_on_desktop: form.get("show_on_desktop") !== null,
+      show_everywhere: form.get("show_everywhere") !== null,
+      show_on_home: form.get("show_on_home") !== null,
+      show_on_product: form.get("show_on_product") !== null,
+      show_on_collection: form.get("show_on_collection") !== null,
+      show_on_article: form.get("show_on_article") !== null,
+      show_on_cart: form.get("show_on_cart") !== null,
+    } as any;
 
-  return redirect("/app/settings?saved=1");
+    await prisma.waFloatConfig.upsert({
+      where: { shop },
+      create: { shop, config: cfg },
+      update: { config: cfg },
+    });
+
+    return redirect("/app/settings?saved=1");
+  } catch (err) {
+    console.error("settings action error", err);
+    throw err;
+  }
 }
 
 export default function Settings() {
