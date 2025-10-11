@@ -9,7 +9,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { admin } = await authenticate.admin(request);
 
   try {
-    const r = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
+    const r = await admin.graphql(`
+      #graphql
+      query ShopDomain {
+        shop {
+          myshopifyDomain
+        }
+      }
+    `);
     const payload = await r.json();
     if (payload.errors?.length) {
       console.error("loader shop query errors", JSON.stringify(payload.errors, null, 2));
@@ -34,7 +41,14 @@ export async function action({ request }: ActionFunctionArgs) {
   const { admin } = await authenticate.admin(request);
 
   try {
-    const domainResp = await admin.graphql(`#graphql{ shop { myshopifyDomain } }`);
+    const domainResp = await admin.graphql(`
+      #graphql
+      query ShopDomain {
+        shop {
+          myshopifyDomain
+        }
+      }
+    `);
     const payload = await domainResp.json();
     if (payload.errors?.length) {
       console.error("action shop query errors", JSON.stringify(payload.errors, null, 2));
