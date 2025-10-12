@@ -1,0 +1,20 @@
+{%- comment -%} WhatsApp Float App Embed (generated from template) {%- endcomment -%}
+
+{% schema %}
+{
+  "name": "WhatsApp Float",
+  "target": "body",
+  "settings": [
+    { "type": "checkbox", "id": "enabled", "label": "Enable", "default": true },
+    { "type": "paragraph", "content": "Configure options inside the app (Apps -> whatsapp-float -> Settings)." }
+  ]
+}
+{% endschema %}
+
+{% if block.settings.enabled %}
+  <script>
+    window.__WA_FLOAT_SHOP__ = "{{ shop.permanent_domain }}";
+    window.__WA_FLOAT_BASE_URL__ = "__WA_BASE_URL__";
+  </script>
+  <script defer src="{{ 'wa-float.js' | asset_url }}" data-wa-float-base="__WA_BASE_URL__"></script>
+{% endif %}

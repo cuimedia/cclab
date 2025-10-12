@@ -21,14 +21,7 @@ if (!envBase) {
 
 const normalizedBase = envBase.replace(/\/+$/, "");
 
-const templatePath = path.join(
-  __dirname,
-  "..",
-  "extensions",
-  "whatsapp-float",
-  "blocks",
-  "whatsapp-float.liquid.template",
-);
+const templatePath = path.join(__dirname, "templates", "whatsapp-float.liquid.template");
 
 const outputPath = path.join(
   __dirname,
