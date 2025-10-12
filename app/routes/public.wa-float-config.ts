@@ -12,9 +12,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const row = await prisma.waFloatConfig.findUnique({ where: { shop } });
     const cfg = (row?.config as unknown) || {};
-    return json(cfg);
+    return json(cfg, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   } catch (err) {
     console.error("public wa-float-config error", err);
-    return json({ error: "unexpected error" }, { status: 500 });
+    return json(
+      { error: "unexpected error" },
+      {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
+    );
   }
 }
