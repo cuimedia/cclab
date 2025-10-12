@@ -290,15 +290,21 @@ export default function Settings() {
                   </div>
                 </FormLayout.Group>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "24px", alignItems: "start" }}>
-                  <div />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "-64px", // lift to align with color pickers
+                  }}
+                >
                   <div
                     style={{
-                      display: "flex",
+                      display: "inline-flex",
                       alignItems: "center",
                       gap: "24px",
                       borderLeft: "1px solid var(--p-color-border, rgba(0, 0, 0, 0.1))",
                       paddingLeft: "24px",
+                      minHeight: "100%",
                     }}
                   >
                     <div
