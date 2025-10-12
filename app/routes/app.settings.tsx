@@ -74,6 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const form = await request.formData();
+    const has = (name: string) => form.has(name);
     const cfg = {
       number: String(form.get("number") || "").replace(/\D/g, ""),
       message: String(form.get("message") || ""),
@@ -83,15 +84,15 @@ export async function action({ request }: ActionFunctionArgs) {
       size: Number(form.get("size") || 56),
       bg_color: String(form.get("bg_color") || "#25D366"),
       icon_color: String(form.get("icon_color") || "#ffffff"),
-      open_in_new: form.get("open_in_new") === "on",
-      show_on_mobile: form.get("show_on_mobile") !== null,
-      show_on_desktop: form.get("show_on_desktop") !== null,
-      show_everywhere: form.get("show_everywhere") !== null,
-      show_on_home: form.get("show_on_home") !== null,
-      show_on_product: form.get("show_on_product") !== null,
-      show_on_collection: form.get("show_on_collection") !== null,
-      show_on_article: form.get("show_on_article") !== null,
-      show_on_cart: form.get("show_on_cart") !== null,
+      open_in_new: has("open_in_new"),
+      show_on_mobile: has("show_on_mobile"),
+      show_on_desktop: has("show_on_desktop"),
+      show_everywhere: has("show_everywhere"),
+      show_on_home: has("show_on_home"),
+      show_on_product: has("show_on_product"),
+      show_on_collection: has("show_on_collection"),
+      show_on_article: has("show_on_article"),
+      show_on_cart: has("show_on_cart"),
     } as any;
 
     await prisma.waFloatConfig.upsert({
