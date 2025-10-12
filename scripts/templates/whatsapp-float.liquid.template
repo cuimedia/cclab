@@ -5,13 +5,12 @@
   "name": "WhatsApp Float",
   "target": "body",
   "settings": [
-    { "type": "checkbox", "id": "enabled", "label": "Enable", "default": true },
     { "type": "paragraph", "content": "Configure options inside the app (Apps -> whatsapp-float -> Settings)." }
   ]
 }
 {% endschema %}
 
-{% if block.settings.enabled %}
+{% if block.enabled %}
   <script>
     window.__WA_FLOAT_SHOP__ = "{{ shop.permanent_domain }}";
     window.__WA_FLOAT_BASE_URL__ = "__WA_BASE_URL__";
