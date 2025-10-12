@@ -44,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     let cfg: any = {};
     try { cfg = (row?.config as any) || {}; } catch {}
     const saved = url.searchParams.get("saved") === "1";
-    return json({ cfg, shop, saved });
+    return json({ cfg, shop, saved, updatedAt: row?.updatedAt?.toISOString() ?? null });
   } catch (err) {
     console.error("settings loader error", err);
     throw err;
@@ -108,8 +108,25 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
+function formatDateTime(iso: string | null) {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return null;
+  }
+}
+
 export default function Settings() {
-  const { cfg, saved } = useLoaderData<typeof loader>();
+  const { cfg, saved, updatedAt } = useLoaderData<typeof loader>();
+  const formattedUpdatedAt = formatDateTime(updatedAt);
   const initialValues = {
     number: cfg.number || "",
     message: cfg.message || "Hello, I need some help with my order.",
@@ -151,7 +168,8 @@ export default function Settings() {
         <Layout.Section>
           {saved && (
             <Banner status="success" title="设置已保存">
-              已根据最新配置更新浮窗。
+              已根据最新配置更新浮窗
+              {formattedUpdatedAt ? `（保存时间：${formattedUpdatedAt}）` : "。"}
             </Banner>
           )}
           <Card sectioned>
