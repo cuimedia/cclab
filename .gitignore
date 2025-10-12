@@ -19,6 +19,7 @@ database.sqlite
 
 
 /extensions/*/dist
+/extensions/whatsapp-float/blocks/whatsapp-float.liquid
 
 # Ignore shopify files created during app dev
 .shopify/*
