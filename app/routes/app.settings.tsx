@@ -5,6 +5,7 @@ import { Form, useLoaderData } from "@remix-run/react";
 import { useMemo, useState, type ChangeEvent } from "react";
 import {
   Banner,
+  Box,
   Button,
   Card,
   Checkbox,
@@ -181,13 +182,13 @@ export default function Settings() {
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
 
   return (
-    <Page title="WhatsApp 浮窗设置">
+    <Page title="WhatsApp Float Settings">
       <Layout>
         <Layout.Section>
           {saved && (
-            <Banner status="success" title="设置已保存">
-              已根据最新配置更新浮窗
-              {formattedUpdatedAt ? `（保存时间：${formattedUpdatedAt}）` : "。"}
+            <Banner status="success" title="Settings saved">
+              Floating button updated with your latest settings
+              {formattedUpdatedAt ? ` (Saved at: ${formattedUpdatedAt})` : "."}
             </Banner>
           )}
           <Card sectioned>
@@ -195,7 +196,7 @@ export default function Settings() {
               <FormLayout>
                 <FormLayout.Group>
                   <TextField
-                    label="WhatsApp 号码（E.164 纯数字，不带+）"
+                    label="WhatsApp number (E.164 digits only, no +)"
                     name="number"
                     value={formState.number}
                     onChange={updateField("number")}
@@ -203,11 +204,11 @@ export default function Settings() {
                     requiredIndicator
                   />
                   <Select
-                    label="按钮位置"
+                    label="Button position"
                     name="position"
                     options={[
-                      { label: "右下", value: "right" },
-                      { label: "左下", value: "left" },
+                      { label: "Bottom right", value: "right" },
+                      { label: "Bottom left", value: "left" },
                     ]}
                     value={formState.position}
                     onChange={updateField("position")}
@@ -215,7 +216,7 @@ export default function Settings() {
                 </FormLayout.Group>
 
                 <TextField
-                  label="预填消息"
+                  label="Preset message"
                   name="message"
                   value={formState.message}
                   onChange={updateField("message")}
@@ -224,7 +225,7 @@ export default function Settings() {
 
                 <FormLayout.Group>
                   <Select
-                    label="尺寸"
+                    label="Button size"
                     name="size"
                     options={[
                       { label: "48 px", value: "48" },
@@ -235,7 +236,7 @@ export default function Settings() {
                     onChange={updateField("size")}
                   />
                   <TextField
-                    label="横向偏移 X"
+                    label="Horizontal offset X"
                     name="offset_x"
                     type="number"
                     min={0}
@@ -244,7 +245,7 @@ export default function Settings() {
                     onChange={updateField("offset_x")}
                   />
                   <TextField
-                    label="纵向偏移 Y"
+                    label="Vertical offset Y"
                     name="offset_y"
                     type="number"
                     min={0}
@@ -254,117 +255,104 @@ export default function Settings() {
                   />
                 </FormLayout.Group>
 
-                <FormLayout.Group>
-                  <TextField
-                    label="背景色"
-                    name="bg_color"
-                    value={formState.bg_color}
-                    onChange={updateField("bg_color")}
-                    autoComplete="off"
-                  />
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
-                    <input
-                      type="color"
-                      value={formState.bg_color}
-                      onChange={handleColorInput("bg_color")}
-                      style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
-                    />
-                  </div>
-                </FormLayout.Group>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "flex-start" }}>
+                  <div style={{ flex: "1 1 320px", minWidth: "280px" }}>
+                    <FormLayout.Group>
+                      <TextField
+                        label="Background color"
+                        name="bg_color"
+                        value={formState.bg_color}
+                        onChange={updateField("bg_color")}
+                        autoComplete="off"
+                      />
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
+                        <input
+                          type="color"
+                          value={formState.bg_color}
+                          onChange={handleColorInput("bg_color")}
+                          style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
+                        />
+                      </div>
+                    </FormLayout.Group>
 
-                <FormLayout.Group>
-                  <TextField
-                    label="图标色"
-                    name="icon_color"
-                    value={formState.icon_color}
-                    onChange={updateField("icon_color")}
-                    autoComplete="off"
-                  />
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
-                    <input
-                      type="color"
-                      value={formState.icon_color}
-                      onChange={handleColorInput("icon_color")}
-                      style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
-                    />
+                    <FormLayout.Group>
+                      <TextField
+                        label="Icon color"
+                        name="icon_color"
+                        value={formState.icon_color}
+                        onChange={updateField("icon_color")}
+                        autoComplete="off"
+                      />
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
+                        <input
+                          type="color"
+                          value={formState.icon_color}
+                          onChange={handleColorInput("icon_color")}
+                          style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
+                        />
+                      </div>
+                    </FormLayout.Group>
                   </div>
-                </FormLayout.Group>
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginTop: "-64px", // lift to align with color pickers
-                  }}
-                >
-                  <div
+                  <Box
+                    paddingInlineStart="400"
+                    borderInlineStartWidth="025"
+                    borderColor="border-subdued"
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "24px",
-                      borderLeft: "1px solid var(--p-color-border, rgba(0, 0, 0, 0.1))",
-                      paddingLeft: "24px",
-                      minHeight: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                      alignItems: "flex-start",
                     }}
                   >
+                    <Text as="span" variant="bodyMd" tone="subdued">
+                      Button preview
+                    </Text>
                     <div
+                      aria-hidden="true"
                       style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                        gap: "8px",
+                        width: previewSizePx,
+                        height: previewSizePx,
+                        borderRadius: "9999px",
+                        background: formState.bg_color || defaults.bg_color,
+                        display: "grid",
+                        placeItems: "center",
+                        boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
                       }}
                     >
-                      <Text as="span" variant="bodyMd" tone="subdued">
-                        浮窗预览
-                      </Text>
-                      <div
+                      <svg
+                        viewBox="0 0 448 512"
+                        width={Math.floor((previewSizePx || 56) * 0.7)}
+                        height={Math.floor((previewSizePx || 56) * 0.7)}
                         aria-hidden="true"
-                        style={{
-                          width: previewSizePx,
-                          height: previewSizePx,
-                          borderRadius: "9999px",
-                          background: formState.bg_color || defaults.bg_color,
-                          display: "grid",
-                          placeItems: "center",
-                          boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
-                        }}
+                        focusable="false"
                       >
-                        <svg
-                          viewBox="0 0 448 512"
-                          width={Math.floor((previewSizePx || 56) * 0.7)}
-                          height={Math.floor((previewSizePx || 56) * 0.7)}
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <path
-                            fill={formState.icon_color || defaults.icon_color}
-                            d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"
-                          />
-                        </svg>
-                      </div>
+                        <path
+                          fill={formState.icon_color || defaults.icon_color}
+                          d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"
+                        />
+                      </svg>
                     </div>
                     <Button onClick={resetColors} plain>
-                      恢复默认颜色
+                      Reset to defaults
                     </Button>
-                  </div>
+                  </Box>
                 </div>
 
                 <FormLayout.Group>
                   <Checkbox
-                    label="新窗口打开"
+                    label="Open in a new window"
                     name="open_in_new"
                     checked={formState.open_in_new}
                     onChange={updateCheckbox("open_in_new")}
                   />
                   <Checkbox
-                    label="在移动端显示"
+                    label="Show on mobile"
                     name="show_on_mobile"
                     checked={formState.show_on_mobile}
                     onChange={updateCheckbox("show_on_mobile")}
                   />
                   <Checkbox
-                    label="在桌面端显示"
+                    label="Show on desktop"
                     name="show_on_desktop"
                     checked={formState.show_on_desktop}
                     onChange={updateCheckbox("show_on_desktop")}
@@ -373,41 +361,41 @@ export default function Settings() {
 
                 <FormLayout.Group>
                   <Checkbox
-                    label="全站显示"
+                    label="Show on all pages"
                     name="show_everywhere"
                     checked={formState.show_everywhere}
                     onChange={updateCheckbox("show_everywhere")}
                   />
                   <Checkbox
-                    label="首页"
+                    label="Home page"
                     name="show_on_home"
                     checked={formState.show_on_home}
                     onChange={updateCheckbox("show_on_home")}
                     disabled={formState.show_everywhere}
                   />
                   <Checkbox
-                    label="商品页"
+                    label="Product pages"
                     name="show_on_product"
                     checked={formState.show_on_product}
                     onChange={updateCheckbox("show_on_product")}
                     disabled={formState.show_everywhere}
                   />
                   <Checkbox
-                    label="集合页"
+                    label="Collection pages"
                     name="show_on_collection"
                     checked={formState.show_on_collection}
                     onChange={updateCheckbox("show_on_collection")}
                     disabled={formState.show_everywhere}
                   />
                   <Checkbox
-                    label="博文页"
+                    label="Blog posts"
                     name="show_on_article"
                     checked={formState.show_on_article}
                     onChange={updateCheckbox("show_on_article")}
                     disabled={formState.show_everywhere}
                   />
                   <Checkbox
-                    label="购物车页"
+                    label="Cart page"
                     name="show_on_cart"
                     checked={formState.show_on_cart}
                     onChange={updateCheckbox("show_on_cart")}
@@ -416,7 +404,7 @@ export default function Settings() {
                 </FormLayout.Group>
 
                 <Button submit primary>
-                  保存设置
+                  Save settings
                 </Button>
               </FormLayout>
             </Form>
