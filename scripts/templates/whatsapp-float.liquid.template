@@ -10,10 +10,8 @@
 }
 {% endschema %}
 
-{% if block.enabled %}
-  <script>
-    window.__WA_FLOAT_SHOP__ = "{{ shop.permanent_domain }}";
-    window.__WA_FLOAT_BASE_URL__ = "__WA_BASE_URL__";
-  </script>
-  <script defer src="{{ 'wa-float.js' | asset_url }}" data-wa-float-base="__WA_BASE_URL__"></script>
-{% endif %}
+<script>
+  window.__WA_FLOAT_SHOP__ = "{{ shop.permanent_domain }}";
+  window.__WA_FLOAT_BASE_URL__ = "__WA_BASE_URL__";
+</script>
+<script defer src="{{ 'wa-float.js' | asset_url }}" data-wa-float-base="__WA_BASE_URL__"></script>
