@@ -10,11 +10,13 @@ import {
   Card,
   Checkbox,
   FormLayout,
+  InlineGrid,
   Layout,
   Page,
   Select,
   Text,
   TextField,
+  useBreakpoints,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
@@ -180,6 +182,8 @@ export default function Settings() {
   };
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
+  const { mdUp } = useBreakpoints();
+  const { mdUp } = useBreakpoints();
 
   return (
     <Page title="WhatsApp Float Settings">
@@ -255,53 +259,54 @@ export default function Settings() {
                   />
                 </FormLayout.Group>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "flex-start" }}>
-                  <div style={{ flex: "1 1 320px", minWidth: "280px" }}>
-                    <FormLayout.Group>
-                      <TextField
-                        label="Background color"
-                        name="bg_color"
-                        value={formState.bg_color}
-                        onChange={updateField("bg_color")}
-                        autoComplete="off"
-                      />
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
-                        <input
-                          type="color"
+                <InlineGrid columns={{ xs: "1fr", md: "1fr 1fr" }} gap="400" alignItems="start">
+                  <Box>
+                    <FormLayout>
+                      <FormLayout.Group>
+                        <TextField
+                          label="Background color"
+                          name="bg_color"
                           value={formState.bg_color}
-                          onChange={handleColorInput("bg_color")}
-                          style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
+                          onChange={updateField("bg_color")}
+                          autoComplete="off"
                         />
-                      </div>
-                    </FormLayout.Group>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
+                          <input
+                            type="color"
+                            value={formState.bg_color}
+                            onChange={handleColorInput("bg_color")}
+                            style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
+                          />
+                        </div>
+                      </FormLayout.Group>
 
-                    <FormLayout.Group>
-                      <TextField
-                        label="Icon color"
-                        name="icon_color"
-                        value={formState.icon_color}
-                        onChange={updateField("icon_color")}
-                        autoComplete="off"
-                      />
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
-                        <input
-                          type="color"
+                      <FormLayout.Group>
+                        <TextField
+                          label="Icon color"
+                          name="icon_color"
                           value={formState.icon_color}
-                          onChange={handleColorInput("icon_color")}
-                          style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
+                          onChange={updateField("icon_color")}
+                          autoComplete="off"
                         />
-                      </div>
-                    </FormLayout.Group>
-                  </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
+                          <input
+                            type="color"
+                            value={formState.icon_color}
+                            onChange={handleColorInput("icon_color")}
+                            style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
+                          />
+                        </div>
+                      </FormLayout.Group>
+                    </FormLayout>
+                  </Box>
                   <Box
-                    paddingInlineStart="400"
-                    borderInlineStartWidth="025"
-                    borderColor="border-subdued"
                     style={{
                       display: "flex",
                       flexDirection: "column",
                       gap: "12px",
                       alignItems: "flex-start",
+                      borderLeft: mdUp ? "1px solid var(--p-color-border-subdued, rgba(0,0,0,0.1))" : undefined,
+                      paddingLeft: mdUp ? "16px" : "0",
                     }}
                   >
                     <Text as="span" variant="bodyMd" tone="subdued">
@@ -336,7 +341,7 @@ export default function Settings() {
                       Reset to defaults
                     </Button>
                   </Box>
-                </div>
+                </InlineGrid>
 
                 <FormLayout.Group>
                   <Checkbox
