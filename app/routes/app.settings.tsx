@@ -261,41 +261,53 @@ export default function Settings() {
                 <InlineGrid columns={{ xs: "1fr", md: "1fr 1fr" }} gap="400" alignItems="start">
                   <Box>
                     <FormLayout>
-                      <FormLayout.Group>
-                        <TextField
-                          label="Background color"
-                          name="bg_color"
-                          value={formState.bg_color}
-                          onChange={updateField("bg_color")}
-                          autoComplete="off"
-                        />
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
-                          <input
-                            type="color"
-                            value={formState.bg_color}
-                            onChange={handleColorInput("bg_color")}
-                            style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
-                          />
-                        </div>
-                      </FormLayout.Group>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <Box>
+                          <label htmlFor="bg_color" style={{ display: "block", marginBottom: "4px", color: "var(--p-color-text)" }}>
+                            Background color
+                          </label>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <input
+                              type="color"
+                              value={formState.bg_color}
+                              onChange={handleColorInput("bg_color")}
+                              style={{ width: 32, height: 32, border: "none", borderRadius: "9999px", background: "transparent", cursor: "pointer" }}
+                            />
+                            <TextField
+                              id="bg_color"
+                              label=""
+                              labelHidden
+                              name="bg_color"
+                              value={formState.bg_color}
+                              onChange={updateField("bg_color")}
+                              autoComplete="off"
+                            />
+                          </div>
+                        </Box>
 
-                      <FormLayout.Group>
-                        <TextField
-                          label="Icon color"
-                          name="icon_color"
-                          value={formState.icon_color}
-                          onChange={updateField("icon_color")}
-                          autoComplete="off"
-                        />
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "24px" }}>
-                          <input
-                            type="color"
-                            value={formState.icon_color}
-                            onChange={handleColorInput("icon_color")}
-                            style={{ width: 40, height: 32, border: "none", background: "transparent", cursor: "pointer" }}
-                          />
-                        </div>
-                      </FormLayout.Group>
+                        <Box>
+                          <label htmlFor="icon_color" style={{ display: "block", marginBottom: "4px", color: "var(--p-color-text)" }}>
+                            Icon color
+                          </label>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <input
+                              type="color"
+                              value={formState.icon_color}
+                              onChange={handleColorInput("icon_color")}
+                              style={{ width: 32, height: 32, border: "none", borderRadius: "9999px", background: "transparent", cursor: "pointer" }}
+                            />
+                            <TextField
+                              id="icon_color"
+                              label=""
+                              labelHidden
+                              name="icon_color"
+                              value={formState.icon_color}
+                              onChange={updateField("icon_color")}
+                              autoComplete="off"
+                            />
+                          </div>
+                        </Box>
+                      </div>
                     </FormLayout>
                   </Box>
                   <Box
