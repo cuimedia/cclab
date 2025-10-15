@@ -1,8 +1,8 @@
 // app/routes/app.settings.tsx
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
-import { useMemo, useState, type ChangeEvent } from "react";
+import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import {
   Banner,
   Box,
@@ -79,8 +79,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const form = await request.formData();
     const has = (name: string) => form.has(name);
+    const rawNumber = String(form.get("number") || "");
+    const digitsOnly = rawNumber.replace(/\D/g, "");
+    const errors: Record<string, string> = {};
+
+    if (digitsOnly.length < 6 || digitsOnly.length > 15) {
+      errors.number = "Enter 6 to 15 digits (numbers only, without +).";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return json({ errors, values: { number: digitsOnly } }, { status: 400 });
+    }
+
     const cfg = {
-      number: String(form.get("number") || "").replace(/\D/g, ""),
+      number: digitsOnly,
       message: String(form.get("message") || ""),
       position: form.get("position") === "left" ? "left" : "right",
       offset_x: Number(form.get("offset_x") || 24),
@@ -130,6 +142,7 @@ function formatDateTime(iso: string | null) {
 
 export default function Settings() {
   const { cfg, saved, updatedAt } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
     bg_color: "#25D366",
@@ -167,7 +180,13 @@ export default function Settings() {
 
   const updateField =
     (field: keyof typeof initialValues) => (value: string) =>
-      setFormState((prev) => ({ ...prev, [field]: value }));
+      setFormState((prev) => {
+        if (field === "number") {
+          const sanitized = value.replace(/\D/g, "").slice(0, 15);
+          return { ...prev, number: sanitized };
+        }
+        return { ...prev, [field]: value };
+      });
 
   const updateCheckbox =
     (field: keyof typeof initialValues) => (value: boolean) =>
@@ -184,15 +203,23 @@ export default function Settings() {
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
   const { mdUp } = useBreakpoints();
 
+  useEffect(() => {
+    if (actionData?.values) {
+      setFormState((prev) => ({ ...prev, ...actionData.values }));
+    }
+  }, [actionData]);
+
   return (
     <Page title="WhatsApp Float Settings">
       <Layout>
         <Layout.Section>
           {saved && (
-            <Banner status="success" title="Settings saved">
-              Floating button updated with your latest settings
-              {formattedUpdatedAt ? ` (Saved at: ${formattedUpdatedAt})` : "."}
-            </Banner>
+            <Box marginBlockEnd="400">
+              <Banner status="success" title="Settings saved">
+                Floating button updated with your latest settings
+                {formattedUpdatedAt ? ` (Saved at: ${formattedUpdatedAt})` : "."}
+              </Banner>
+            </Box>
           )}
           <Card sectioned>
             <Form method="post">
@@ -204,6 +231,11 @@ export default function Settings() {
                     value={formState.number}
                     onChange={updateField("number")}
                     autoComplete="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={15}
+                    helpText="Enter your full international number (6–15 digits, digits only)."
+                    error={actionData?.errors?.number}
                     requiredIndicator
                   />
                   <Select
