@@ -273,15 +273,17 @@ export default function Settings() {
                               onChange={handleColorInput("bg_color")}
                               style={{ width: 32, height: 32, border: "none", borderRadius: "9999px", background: "transparent", cursor: "pointer" }}
                             />
-                            <TextField
-                              id="bg_color"
-                              label=""
-                              labelHidden
-                              name="bg_color"
-                              value={formState.bg_color}
-                              onChange={updateField("bg_color")}
-                              autoComplete="off"
-                            />
+                            <div style={{ flex: "1 1 auto" }}>
+                              <TextField
+                                id="bg_color"
+                                label=""
+                                labelHidden
+                                name="bg_color"
+                                value={formState.bg_color}
+                                onChange={updateField("bg_color")}
+                                autoComplete="off"
+                              />
+                            </div>
                           </div>
                         </Box>
 
@@ -296,15 +298,17 @@ export default function Settings() {
                               onChange={handleColorInput("icon_color")}
                               style={{ width: 32, height: 32, border: "none", borderRadius: "9999px", background: "transparent", cursor: "pointer" }}
                             />
-                            <TextField
-                              id="icon_color"
-                              label=""
-                              labelHidden
-                              name="icon_color"
-                              value={formState.icon_color}
-                              onChange={updateField("icon_color")}
-                              autoComplete="off"
-                            />
+                            <div style={{ flex: "1 1 auto" }}>
+                              <TextField
+                                id="icon_color"
+                                label=""
+                                labelHidden
+                                name="icon_color"
+                                value={formState.icon_color}
+                                onChange={updateField("icon_color")}
+                                autoComplete="off"
+                              />
+                            </div>
                           </div>
                         </Box>
                       </div>
