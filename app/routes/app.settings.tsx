@@ -183,7 +183,6 @@ export default function Settings() {
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
   const { mdUp } = useBreakpoints();
-  const { mdUp } = useBreakpoints();
 
   return (
     <Page title="WhatsApp Float Settings">
