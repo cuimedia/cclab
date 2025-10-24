@@ -1,6 +1,6 @@
 # Production config for Render deployment
 client_id = "437477591e78677478825f6ba18475ce"
-name = "whatsapp float"
+name = "Whatsapp Float"
 application_url = "https://whatsappfloat.180mm.com"
 embedded = true
 
