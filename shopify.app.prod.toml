@@ -1,7 +1,7 @@
 # Production config for Render deployment
 client_id = "437477591e78677478825f6ba18475ce"
 name = "whatsapp-float"
-application_url = "https://cclab-f12o.onrender.com"
+application_url = "https://whatsappfloat.180mm.com"
 embedded = true
 
 [build]
@@ -15,7 +15,7 @@ api_version = "2025-01"
   uri = "/webhooks/app/uninstalled"
 
 [auth]
-redirect_urls = ["https://cclab-f12o.onrender.com/auth/callback"]
+redirect_urls = ["https://whatsappfloat.180mm.com/auth/callback"]
 
 [access_scopes]
 scopes = "read_products"
