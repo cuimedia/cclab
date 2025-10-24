@@ -214,7 +214,7 @@ export default function Settings() {
       <Layout>
         <Layout.Section>
           {saved && (
-            <Box marginBlockEnd="400">
+            <Box marginBlockEnd="400" style={{ marginBottom: "16px" }}>
               <Banner status="success" title="Settings saved">
                 Floating button updated with your latest settings
                 {formattedUpdatedAt ? ` (Saved at: ${formattedUpdatedAt})` : "."}
