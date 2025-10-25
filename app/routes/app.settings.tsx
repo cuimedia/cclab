@@ -4,6 +4,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import * as AppBridgeActions from "@shopify/app-bridge/actions";
+import type { SaveBar as SaveBarType } from "@shopify/app-bridge/actions";
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
@@ -148,7 +149,14 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  const saveBarRef = useRef<ReturnType<typeof AppBridgeActions.SaveBar.create>>();
+  const resolveSaveBar = useCallback((): SaveBarType | undefined => {
+    const actions = AppBridgeActions as unknown as {
+      SaveBar?: SaveBarType;
+      default?: { SaveBar?: SaveBarType };
+    };
+    return actions.SaveBar ?? actions.default?.SaveBar;
+  }, []);
+  const saveBarRef = useRef<ReturnType<SaveBarType["create"]>>();
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -237,8 +245,13 @@ export default function Settings() {
 
   useEffect(() => {
     if (!app) return;
+    const SaveBarAction = resolveSaveBar();
+    if (!SaveBarAction) {
+      console.error("SaveBar action is unavailable from @shopify/app-bridge/actions");
+      return;
+    }
     if (!saveBarRef.current) {
-      saveBarRef.current = AppBridgeActions.SaveBar.create(app, { visible: false });
+      saveBarRef.current = SaveBarAction.create(app, { visible: false });
     }
     const saveBar = saveBarRef.current;
     saveBar.set({
@@ -255,9 +268,9 @@ export default function Settings() {
     saveBar.setVisibility(isDirty || isSubmitting);
 
     return () => {
-      saveBar.setVisibility(false);
+      saveBar?.setVisibility(false);
     };
-  }, [app, handleDiscard, handleSave, isDirty, isSubmitting]);
+  }, [app, handleDiscard, handleSave, isDirty, isSubmitting, resolveSaveBar]);
 
   return (
     <Page title="WhatsApp Float Settings">
