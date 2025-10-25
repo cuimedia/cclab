@@ -3,7 +3,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { SaveBar } from "@shopify/app-bridge/actions";
+import appBridgeActions from "@shopify/app-bridge/actions";
+const { SaveBar } = appBridgeActions;
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
