@@ -239,7 +239,7 @@ export default function Settings() {
   useEffect(() => {
     if (!app) return;
     if (!saveBarRef.current) {
-      saveBarRef.current = AppBridgeActions.SaveBar.create(app, { visible: false });
+      saveBarRef.current = SaveBar.create(app, { visible: false });
     }
     const saveBar = saveBarRef.current;
     saveBar.set({
