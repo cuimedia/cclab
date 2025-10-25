@@ -3,7 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import AppBridgeActions from "@shopify/app-bridge/actions";
+import * as AppBridgeActions from "@shopify/app-bridge/actions";
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
@@ -148,8 +148,7 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  const { SaveBar } = AppBridgeActions;
-  const saveBarRef = useRef<ReturnType<typeof SaveBar.create>>();
+  const saveBarRef = useRef<ReturnType<typeof AppBridgeActions.SaveBar.create>>();
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -239,7 +238,7 @@ export default function Settings() {
   useEffect(() => {
     if (!app) return;
     if (!saveBarRef.current) {
-      saveBarRef.current = SaveBar.create(app, { visible: false });
+      saveBarRef.current = AppBridgeActions.SaveBar.create(app, { visible: false });
     }
     const saveBar = saveBarRef.current;
     saveBar.set({
