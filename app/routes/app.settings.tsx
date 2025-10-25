@@ -1,8 +1,10 @@
 // app/routes/app.settings.tsx
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
+import { useAppBridge } from "@shopify/app-bridge-react";
+import { SaveBar } from "@shopify/app-bridge/actions";
+import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
   Box,
@@ -143,33 +145,45 @@ function formatDateTime(iso: string | null) {
 export default function Settings() {
   const { cfg, saved, updatedAt } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const app = useAppBridge();
+  const formRef = useRef<HTMLFormElement>(null);
+  const saveBarRef = useRef<ReturnType<typeof SaveBar.create>>();
+  const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
     bg_color: "#25D366",
     icon_color: "#ffffff",
   } as const;
 
-  const initialValues = {
-    number: cfg.number || "",
-    message: cfg.message || "Hello, I need some help with my order.",
-    position: cfg.position || "right",
-    size: String(cfg.size || 56),
-    offset_x: String(cfg.offset_x ?? 24),
-    offset_y: String(cfg.offset_y ?? 24),
-    bg_color: cfg.bg_color || defaults.bg_color,
-    icon_color: cfg.icon_color || defaults.icon_color,
-    open_in_new: cfg.open_in_new ?? true,
-    show_on_mobile: cfg.show_on_mobile ?? true,
-    show_on_desktop: cfg.show_on_desktop ?? true,
-    show_everywhere: cfg.show_everywhere ?? true,
-    show_on_home: cfg.show_on_home ?? true,
-    show_on_product: cfg.show_on_product ?? true,
-    show_on_collection: cfg.show_on_collection ?? true,
-    show_on_article: cfg.show_on_article ?? false,
-    show_on_cart: cfg.show_on_cart ?? true,
-  };
+  const cfgKey = useMemo(() => JSON.stringify(cfg ?? {}), [cfg]);
+  const initialValues = useMemo(
+    () => ({
+      number: cfg.number || "",
+      message: cfg.message || "Hello, I need some help with my order.",
+      position: cfg.position || "right",
+      size: String(cfg.size || 56),
+      offset_x: String(cfg.offset_x ?? 24),
+      offset_y: String(cfg.offset_y ?? 24),
+      bg_color: cfg.bg_color || defaults.bg_color,
+      icon_color: cfg.icon_color || defaults.icon_color,
+      open_in_new: cfg.open_in_new ?? true,
+      show_on_mobile: cfg.show_on_mobile ?? true,
+      show_on_desktop: cfg.show_on_desktop ?? true,
+      show_everywhere: cfg.show_everywhere ?? true,
+      show_on_home: cfg.show_on_home ?? true,
+      show_on_product: cfg.show_on_product ?? true,
+      show_on_collection: cfg.show_on_collection ?? true,
+      show_on_article: cfg.show_on_article ?? false,
+      show_on_cart: cfg.show_on_cart ?? true,
+    }),
+    [cfgKey],
+  );
 
   const [formState, setFormState] = useState(initialValues);
+  const serializedInitial = useMemo(() => JSON.stringify(initialValues), [initialValues]);
+  const serializedCurrent = useMemo(() => JSON.stringify(formState), [formState]);
+  const isDirty = serializedInitial !== serializedCurrent;
 
   const handleColorInput =
     (field: "bg_color" | "icon_color") =>
@@ -209,6 +223,42 @@ export default function Settings() {
     }
   }, [actionData]);
 
+  useEffect(() => {
+    setFormState(initialValues);
+  }, [serializedInitial, initialValues]);
+
+  const handleDiscard = useCallback(() => {
+    setFormState(initialValues);
+  }, [initialValues]);
+
+  const handleSave = useCallback(() => {
+    formRef.current?.requestSubmit();
+  }, []);
+
+  useEffect(() => {
+    if (!app) return;
+    if (!saveBarRef.current) {
+      saveBarRef.current = SaveBar.create(app, { visible: false });
+    }
+    const saveBar = saveBarRef.current;
+    saveBar.set({
+      saveAction: {
+        onAction: handleSave,
+        loading: isSubmitting,
+        disabled: !isDirty,
+      },
+      discardAction: {
+        onAction: handleDiscard,
+        disabled: !isDirty || isSubmitting,
+      },
+    });
+    saveBar.setVisibility(isDirty || isSubmitting);
+
+    return () => {
+      saveBar.setVisibility(false);
+    };
+  }, [app, handleDiscard, handleSave, isDirty, isSubmitting]);
+
   return (
     <Page title="WhatsApp Float Settings">
       <Layout>
@@ -222,7 +272,7 @@ export default function Settings() {
             </Box>
           )}
           <Card sectioned>
-            <Form method="post">
+            <Form method="post" ref={formRef}>
               <FormLayout>
                 <FormLayout.Group>
                   <TextField
@@ -455,9 +505,6 @@ export default function Settings() {
                   />
                 </FormLayout.Group>
 
-                <Button submit primary>
-                  Save settings
-                </Button>
               </FormLayout>
             </Form>
           </Card>
