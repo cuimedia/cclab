@@ -4,7 +4,9 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import appBridgeActions from "@shopify/app-bridge/actions";
-const { SaveBar } = appBridgeActions;
+import type { SaveBar as SaveBarApi } from "@shopify/app-bridge/actions";
+const SaveBar = (appBridgeActions as { SaveBar?: SaveBarApi }).SaveBar;
+type SaveBarInstance = SaveBarApi extends { create: (...args: any[]) => infer R } ? R : never;
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
@@ -149,7 +151,7 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  const saveBarRef = useRef<ReturnType<typeof SaveBar.create>>();
+  const saveBarRef = useRef<SaveBarInstance | null>(null);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -237,11 +239,12 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    if (!app) return;
+    if (!app || !SaveBar) return;
     if (!saveBarRef.current) {
       saveBarRef.current = SaveBar.create(app, { visible: false });
     }
     const saveBar = saveBarRef.current;
+    if (!saveBar) return;
     saveBar.set({
       saveAction: {
         onAction: handleSave,
@@ -256,7 +259,7 @@ export default function Settings() {
     saveBar.setVisibility(isDirty || isSubmitting);
 
     return () => {
-      saveBar?.setVisibility(false);
+      saveBar.setVisibility(false);
     };
   }, [app, handleDiscard, handleSave, isDirty, isSubmitting]);
 
