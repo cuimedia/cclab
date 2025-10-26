@@ -3,10 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import appBridgeActions from "@shopify/app-bridge/actions";
 import type { SaveBar as SaveBarApi } from "@shopify/app-bridge/actions";
-const SaveBar = (appBridgeActions as { SaveBar?: SaveBarApi }).SaveBar;
-type SaveBarInstance = SaveBarApi extends { create: (...args: any[]) => infer R } ? R : never;
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
@@ -151,7 +148,14 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  const saveBarRef = useRef<SaveBarInstance | null>(null);
+const saveBarRef = useRef<ReturnType<NonNullable<SaveBarApi>["create"]> | null>(null);
+const saveBarModuleRef = useRef<Promise<SaveBarApi | undefined> | null>(null);
+const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
+  if (!saveBarModuleRef.current) {
+    saveBarModuleRef.current = import("@shopify/app-bridge/actions").then((mod: any) => mod?.SaveBar ?? mod?.default?.SaveBar);
+  }
+  return saveBarModuleRef.current;
+};
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -219,6 +223,7 @@ export default function Settings() {
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
   const { mdUp } = useBreakpoints();
+  const [saveBarReady, setSaveBarReady] = useState(false);
 
   useEffect(() => {
     if (actionData?.values) {
@@ -239,12 +244,43 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    if (!app || !SaveBar) return;
-    if (!saveBarRef.current) {
-      saveBarRef.current = SaveBar.create(app, { visible: false });
+    if (!app) {
+      saveBarRef.current?.setVisibility(false);
+      saveBarRef.current = null;
+      setSaveBarReady(false);
+      return;
     }
+
+    let cancelled = false;
+
+    const ensureSaveBar = async () => {
+      if (saveBarRef.current || cancelled) {
+        setSaveBarReady(!!saveBarRef.current);
+        return;
+      }
+      try {
+        const SaveBarAction = await loadSaveBar();
+        if (!SaveBarAction || cancelled) return;
+        saveBarRef.current = SaveBarAction.create(app, { visible: false });
+        if (!cancelled) setSaveBarReady(true);
+      } catch (err) {
+        console.warn("Failed to initialize SaveBar", err);
+      }
+    };
+
+    ensureSaveBar();
+
+    return () => {
+      cancelled = true;
+      saveBarRef.current?.setVisibility(false);
+      saveBarRef.current = null;
+      setSaveBarReady(false);
+    };
+  }, [app]);
+
+  useEffect(() => {
+    if (!app || !saveBarReady || !saveBarRef.current) return;
     const saveBar = saveBarRef.current;
-    if (!saveBar) return;
     saveBar.set({
       saveAction: {
         onAction: handleSave,
@@ -257,11 +293,7 @@ export default function Settings() {
       },
     });
     saveBar.setVisibility(isDirty || isSubmitting);
-
-    return () => {
-      saveBar.setVisibility(false);
-    };
-  }, [app, handleDiscard, handleSave, isDirty, isSubmitting]);
+  }, [app, handleDiscard, handleSave, isDirty, isSubmitting, saveBarReady]);
 
   return (
     <Page title="WhatsApp Float Settings">
