@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
   const hostFromUrl = url.searchParams.get("host");
   const host = hostFromUrl || persistedHost || "";
 
-  let responseInit: { headers: Record<string, string> } | undefined;
+  let responseInit;
   if (hostFromUrl && hostFromUrl !== persistedHost) {
     responseInit = {
       headers: {
