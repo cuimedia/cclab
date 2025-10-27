@@ -305,36 +305,38 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
     }
   }, [app, saveBarReady]);
 
+  const pagePrimaryAction = useMemo(
+    () => ({
+      content: "保存",
+      onAction: handleSave,
+      loading: isSubmitting,
+      disabled: !isDirty,
+    }),
+    [handleSave, isDirty, isSubmitting],
+  );
+
+  const pageSecondaryActions = useMemo(
+    () => [
+      {
+        content: "放弃更改",
+        onAction: handleDiscard,
+        disabled: !isDirty || isSubmitting,
+      },
+    ],
+    [handleDiscard, isDirty, isSubmitting],
+  );
+
+  const pageActionProps = saveBarReady
+    ? {}
+    : {
+        primaryAction: pagePrimaryAction,
+        secondaryActions: pageSecondaryActions,
+      };
+
   return (
-    <Page title="WhatsApp Float Settings">
+    <Page title="WhatsApp Float Settings" {...pageActionProps}>
       <Layout>
         <Layout.Section>
-          {!saveBarReady && (
-            <Box marginBlockEnd="200">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "8px",
-                }}
-              >
-                <Button
-                  onClick={handleDiscard}
-                  disabled={!isDirty || isSubmitting}
-                >
-                  放弃更改
-                </Button>
-                <Button
-                  primary
-                  onClick={handleSave}
-                  loading={isSubmitting}
-                  disabled={!isDirty}
-                >
-                  保存
-                </Button>
-              </div>
-            </Box>
-          )}
           {saved && (
             <Box marginBlockEnd="400" style={{ marginBottom: "16px" }}>
               <Banner status="success" title="Settings saved">
