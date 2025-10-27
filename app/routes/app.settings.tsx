@@ -295,59 +295,46 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
     saveBar.setVisibility(isDirty || isSubmitting);
   }, [app, handleDiscard, handleSave, isDirty, isSubmitting, saveBarReady]);
 
-  const pagePrimaryAction = useMemo(
-    () => ({
-      content: "保存",
-      onAction: handleSave,
-      loading: isSubmitting,
-      disabled: !isDirty,
-    }),
-    [handleSave, isDirty, isSubmitting],
-  );
-
-  const pageSecondaryActions = useMemo(
-    () => [
-      {
-        content: "放弃更改",
-        onAction: handleDiscard,
-        disabled: !isDirty || isSubmitting,
-      },
-    ],
-    [handleDiscard, isDirty, isSubmitting],
-  );
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      console.debug("[SaveBar]", {
+        appReady: !!app,
+        saveBarReady,
+        hasSaveBar: !!saveBarRef.current,
+      });
+    }
+  }, [app, saveBarReady]);
 
   return (
-    <Page
-      title="WhatsApp Float Settings"
-      primaryAction={pagePrimaryAction}
-      secondaryActions={pageSecondaryActions}
-    >
+    <Page title="WhatsApp Float Settings">
       <Layout>
         <Layout.Section>
-          <Box marginBlockEnd="200">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "8px",
-              }}
-            >
-              <Button
-                onClick={handleDiscard}
-                disabled={!isDirty || isSubmitting}
+          {!saveBarReady && (
+            <Box marginBlockEnd="200">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "8px",
+                }}
               >
-                放弃更改
-              </Button>
-              <Button
-                primary
-                onClick={handleSave}
-                loading={isSubmitting}
-                disabled={!isDirty}
-              >
-                保存
-              </Button>
-            </div>
-          </Box>
+                <Button
+                  onClick={handleDiscard}
+                  disabled={!isDirty || isSubmitting}
+                >
+                  放弃更改
+                </Button>
+                <Button
+                  primary
+                  onClick={handleSave}
+                  loading={isSubmitting}
+                  disabled={!isDirty}
+                >
+                  保存
+                </Button>
+              </div>
+            </Box>
+          )}
           {saved && (
             <Box marginBlockEnd="400" style={{ marginBottom: "16px" }}>
               <Banner status="success" title="Settings saved">
