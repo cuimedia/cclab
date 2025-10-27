@@ -1,18 +1,37 @@
-import { json } from "@remix-run/node";
+import { createCookie, json } from "@remix-run/node";
 import { Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 
+const hostCookie = createCookie("shopify_app_host", {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: true,
+  path: "/",
+  maxAge: 60 * 60 * 24 * 30,
+});
+
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }) => {
   await authenticate.admin(request);
   const url = new URL(request.url);
-  const host = url.searchParams.get("host") || "";
+  const rawCookie = request.headers.get("Cookie");
+  const persistedHost = rawCookie ? await hostCookie.parse(rawCookie) : null;
+  const hostFromUrl = url.searchParams.get("host");
+  const host = hostFromUrl || persistedHost || "";
 
-  return json({ apiKey: process.env.SHOPIFY_API_KEY || "", host });
+  const headers = new Headers();
+  if (hostFromUrl && hostFromUrl !== persistedHost) {
+    headers.append("Set-Cookie", await hostCookie.serialize(hostFromUrl));
+  }
+
+  return json(
+    { apiKey: process.env.SHOPIFY_API_KEY || "", host },
+    headers.size ? { headers } : undefined,
+  );
 };
 
 export default function App() {
