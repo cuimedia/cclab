@@ -23,15 +23,16 @@ export const loader = async ({ request }) => {
   const hostFromUrl = url.searchParams.get("host");
   const host = hostFromUrl || persistedHost || "";
 
-  const headers = new Headers();
+  let responseInit: { headers: Record<string, string> } | undefined;
   if (hostFromUrl && hostFromUrl !== persistedHost) {
-    headers.append("Set-Cookie", await hostCookie.serialize(hostFromUrl));
+    responseInit = {
+      headers: {
+        "Set-Cookie": await hostCookie.serialize(hostFromUrl),
+      },
+    };
   }
 
-  return json(
-    { apiKey: process.env.SHOPIFY_API_KEY || "", host },
-    headers.size ? { headers } : undefined,
-  );
+  return json({ apiKey: process.env.SHOPIFY_API_KEY || "", host }, responseInit);
 };
 
 export default function App() {
