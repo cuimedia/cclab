@@ -151,7 +151,8 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  const saveBarRef = useRef<ReturnType<typeof SaveBar.create> | null>(null);
+  type SaveBarInstance = ReturnType<SaveBarAction["create"]>;
+  const saveBarRef = useRef<SaveBarInstance | null>(null);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -254,8 +255,13 @@ export default function Settings() {
         setSaveBarReady(!!saveBarRef.current);
         return;
       }
+      const SaveBarClass = (appBridgeActions as any).SaveBar ?? (appBridgeActions as any).default?.SaveBar;
+      if (!SaveBarClass) {
+        console.error("[SaveBar] export missing", appBridgeActions);
+        return;
+      }
       try {
-        saveBarRef.current = SaveBar.create(app, { visible: false });
+        saveBarRef.current = SaveBarClass.create(app, { visible: false });
         console.log("[SaveBar] create");
         if (!cancelled) setSaveBarReady(true);
       } catch (err) {
@@ -302,7 +308,7 @@ export default function Settings() {
 
   const pagePrimaryAction = useMemo(
     () => ({
-      content: "????",
+      content: "Save",
       onAction: handleSave,
       loading: isSubmitting,
       disabled: !isDirty,
@@ -313,7 +319,7 @@ export default function Settings() {
   const pageSecondaryActions = useMemo(
     () => [
       {
-        content: "????????",
+        content: "Discard changes",
         onAction: handleDiscard,
         disabled: !isDirty || isSubmitting,
       },
@@ -582,6 +588,9 @@ export default function Settings() {
     </Page>
   );
 }
+
+
+
 
 
 
