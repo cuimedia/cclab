@@ -260,8 +260,12 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
       }
       try {
         const SaveBarAction = await loadSaveBar();
-        if (!SaveBarAction || cancelled) return;
-        saveBarRef.current = SaveBarAction.create(app, { visible: false });
+        if (!SaveBarAction || cancelled) {
+          console.warn("[SaveBar] module missing", { SaveBarAction, cancelled });
+          return;
+        }
+        console.log("[SaveBar] create", SaveBarAction);
+          saveBarRef.current = SaveBarAction.create(app, { visible: false });
         if (!cancelled) setSaveBarReady(true);
       } catch (err) {
         console.error("Failed to initialize SaveBar", err);
