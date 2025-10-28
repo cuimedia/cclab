@@ -3,8 +3,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import type { SaveBar as SaveBarApi } from "@shopify/app-bridge/actions";
-import appBridgeActions from "@shopify/app-bridge/actions";
+import type { SaveBar as SaveBarAction } from "@shopify/app-bridge/actions";
+import * as appBridgeActions from "@shopify/app-bridge/actions";
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
@@ -24,7 +24,7 @@ import {
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
-const { SaveBar } = appBridgeActions as { SaveBar: SaveBarApi };
+const { SaveBar } = appBridgeActions as { SaveBar: SaveBarAction };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { admin } = await authenticate.admin(request);
@@ -582,6 +582,7 @@ export default function Settings() {
     </Page>
   );
 }
+
 
 
 
