@@ -3,7 +3,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import type { SaveBar as SaveBarAction } from "@shopify/app-bridge/actions";
 import * as appBridgeActions from "@shopify/app-bridge/actions";
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
@@ -24,7 +23,19 @@ import {
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
-const resolveSaveBar = (): SaveBarAction | undefined => {
+type SaveBarModule = {
+  create: (app: ReturnType<typeof useAppBridge>, options?: Record<string, unknown>) => SaveBarInstance;
+  Action?: Record<string, string>;
+};
+
+type SaveBarInstance = {
+  set?: (options: Record<string, unknown>, shouldUpdate?: boolean) => unknown;
+  setVisibility?: (visible: boolean) => unknown;
+  dispatch?: (action: string) => unknown;
+  options?: Record<string, unknown>;
+};
+
+const resolveSaveBar = (): SaveBarModule | undefined => {
   const mod: any = appBridgeActions;
   return (
     mod?.SaveBar ??
@@ -33,9 +44,6 @@ const resolveSaveBar = (): SaveBarAction | undefined => {
     mod?.default?.ContextualSaveBar
   );
 };
-
-type SaveBarModule = NonNullable<ReturnType<typeof resolveSaveBar>>;
-type SaveBarInstance = ReturnType<SaveBarModule["create"]>;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { admin } = await authenticate.admin(request);
@@ -163,6 +171,8 @@ export default function Settings() {
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
   const saveBarRef = useRef<SaveBarInstance | null>(null);
+  const saveBarVisibleRef = useRef(false);
+  const saveBarModuleRef = useRef<SaveBarModule | null>(null);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -252,8 +262,17 @@ export default function Settings() {
 
   useEffect(() => {
     if (!app) {
-      saveBarRef.current?.setVisibility(false);
+      if (saveBarRef.current && typeof saveBarRef.current.setVisibility === "function") {
+        saveBarRef.current.setVisibility(false);
+      } else if (
+        saveBarRef.current &&
+        typeof saveBarRef.current.dispatch === "function" &&
+        saveBarModuleRef.current?.Action?.HIDE
+      ) {
+        saveBarRef.current.dispatch(saveBarModuleRef.current.Action.HIDE);
+      }
       saveBarRef.current = null;
+      saveBarVisibleRef.current = false;
       setSaveBarReady(false);
       return;
     }
@@ -265,13 +284,15 @@ export default function Settings() {
         setSaveBarReady(!!saveBarRef.current);
         return;
       }
-      const SaveBarClass = resolveSaveBar();
-      if (!SaveBarClass) {
+      const saveBarModule = resolveSaveBar();
+      if (!saveBarModule || typeof saveBarModule.create !== "function") {
         console.error("[SaveBar] export missing", appBridgeActions);
         return;
       }
       try {
-        saveBarRef.current = SaveBarClass.create(app, { visible: false });
+        saveBarModuleRef.current = saveBarModule;
+        saveBarRef.current = saveBarModule.create(app);
+        saveBarVisibleRef.current = false;
         console.log("[SaveBar] create");
         if (!cancelled) setSaveBarReady(true);
       } catch (err) {
@@ -283,8 +304,18 @@ export default function Settings() {
 
     return () => {
       cancelled = true;
-      saveBarRef.current?.setVisibility(false);
+      if (saveBarRef.current && typeof saveBarRef.current.setVisibility === "function") {
+        saveBarRef.current.setVisibility(false);
+      } else if (
+        saveBarRef.current &&
+        typeof saveBarRef.current.dispatch === "function" &&
+        saveBarModuleRef.current?.Action?.HIDE
+      ) {
+        saveBarRef.current.dispatch(saveBarModuleRef.current.Action.HIDE);
+      }
       saveBarRef.current = null;
+      saveBarModuleRef.current = null;
+      saveBarVisibleRef.current = false;
       setSaveBarReady(false);
     };
   }, [app]);
@@ -292,19 +323,58 @@ export default function Settings() {
   useEffect(() => {
     if (!app || !saveBarReady || !saveBarRef.current) return;
     const saveBar = saveBarRef.current;
-    saveBar.set({
-      saveAction: {
-        onAction: handleSave,
-        loading: isSubmitting,
-        disabled: !isDirty,
-      },
-      discardAction: {
-        onAction: handleDiscard,
-        disabled: !isDirty || isSubmitting,
-      },
-    });
-    saveBar.setVisibility(isDirty || isSubmitting);
+    const saveBarModule = saveBarModuleRef.current;
+    if (typeof saveBar.set === "function") {
+      saveBar.set({
+        saveAction: {
+          onAction: handleSave,
+          loading: isSubmitting,
+          disabled: !isDirty,
+        },
+        discardAction: {
+          onAction: handleDiscard,
+          disabled: !isDirty || isSubmitting,
+        },
+      });
+    }
+    const shouldShow = isDirty || isSubmitting;
+    if (shouldShow !== saveBarVisibleRef.current) {
+      if (shouldShow) {
+        if (typeof saveBar.setVisibility === "function") {
+          saveBar.setVisibility(true);
+        } else if (typeof saveBar.dispatch === "function" && saveBarModule?.Action?.SHOW) {
+          saveBar.dispatch(saveBarModule.Action.SHOW);
+        }
+      } else if (typeof saveBar.setVisibility === "function") {
+        saveBar.setVisibility(false);
+      } else if (typeof saveBar.dispatch === "function" && saveBarModule?.Action?.HIDE) {
+        saveBar.dispatch(saveBarModule.Action.HIDE);
+      }
+      saveBarVisibleRef.current = shouldShow;
+    }
   }, [app, handleDiscard, handleSave, isDirty, isSubmitting, saveBarReady]);
+
+  useEffect(() => {
+    if (!app || !saveBarReady) return;
+    const saveBarModule = saveBarModuleRef.current;
+    const unsubscribers: Array<() => void> = [];
+    const subscribe = app.subscribe?.bind(app);
+    if (typeof subscribe === "function") {
+      if (saveBarModule?.Action?.SAVE) {
+        unsubscribers.push(subscribe(saveBarModule.Action.SAVE, handleSave));
+      }
+      if (saveBarModule?.Action?.DISCARD) {
+        unsubscribers.push(subscribe(saveBarModule.Action.DISCARD, handleDiscard));
+      }
+    }
+    return () => {
+      unsubscribers.forEach((unsub) => {
+        try {
+          if (typeof unsub === "function") unsub();
+        } catch {}
+      });
+    };
+  }, [app, handleDiscard, handleSave, saveBarReady]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -312,6 +382,7 @@ export default function Settings() {
         appReady: !!app,
         saveBarReady,
         hasSaveBar: !!saveBarRef.current,
+        visible: saveBarVisibleRef.current,
       });
     }
   }, [app, saveBarReady]);
