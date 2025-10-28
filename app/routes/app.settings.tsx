@@ -118,7 +118,7 @@ export async function action({ request }: ActionFunctionArgs) {
       update: { config: cfg },
     });
 
-    return redirect("/app/settings?saved=1");
+    return redirect("/app?saved=1");
   } catch (err) {
     console.error("settings action error", err);
     throw err;
@@ -216,12 +216,10 @@ export default function Settings() {
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
   const canUseContextualSaveBar = useMemo(() => {
     if (typeof window === "undefined") return false;
-    // 仅在嵌入到 Shopify Admin 的 iframe 中，且 URL 带有 embedded=1 时，才尝试显示 App Bridge SaveBar
+    // 在 Shopify Admin 的 iframe 中，并且 App Bridge 可用时启用 SaveBar
     const isEmbedded = window.top !== window.self;
-    const search = new URLSearchParams(window.location.search);
-    const embeddedParam = search.get("embedded");
     const hasBridge = !!app && typeof (app as any).dispatch === "function";
-    return isEmbedded && embeddedParam === "1" && hasBridge;
+    return isEmbedded && hasBridge;
   }, [app]);
   const showContextualSaveBar = canUseContextualSaveBar && (isDirty || isSubmitting);
 
