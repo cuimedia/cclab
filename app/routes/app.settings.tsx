@@ -216,7 +216,11 @@ export default function Settings() {
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
   const { mdUp } = useBreakpoints();
-  const showContextualSaveBar = isDirty || isSubmitting;
+  const canUseContextualSaveBar = useMemo(
+    () => !!app && typeof (app as any).dispatch === "function",
+    [app],
+  );
+  const showContextualSaveBar = canUseContextualSaveBar && (isDirty || isSubmitting);
 
   useEffect(() => {
     if (actionData?.values) {
@@ -237,7 +241,7 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    if (!app) return;
+    if (!canUseContextualSaveBar || !app) return;
 
     const contextualSaveBar = ContextualSaveBarActions.create(app, { fullWidth: true });
     contextualSaveBarRef.current = contextualSaveBar;
@@ -246,9 +250,11 @@ export default function Settings() {
       contextualSaveBar.dispatch(ContextualSaveBarActions.Action.HIDE);
       contextualSaveBarRef.current = null;
     };
-  }, [app]);
+  }, [app, canUseContextualSaveBar]);
 
   useEffect(() => {
+    if (!canUseContextualSaveBar) return;
+
     const contextualSaveBar = contextualSaveBarRef.current;
     if (!contextualSaveBar) return;
 
@@ -270,7 +276,7 @@ export default function Settings() {
         ? ContextualSaveBarActions.Action.SHOW
         : ContextualSaveBarActions.Action.HIDE,
     );
-  }, [handleDiscard, handleSave, isDirty, isSubmitting]);
+  }, [canUseContextualSaveBar, handleDiscard, handleSave, isDirty, isSubmitting]);
 
   const pagePrimaryAction = useMemo(
     () => ({
