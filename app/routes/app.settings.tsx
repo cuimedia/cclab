@@ -149,7 +149,6 @@ export default function Settings() {
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
   const contextualSaveBarRef = useRef<ReturnType<typeof ContextualSaveBarActions.create> | null>(null);
-  const contextualSaveBarUnsubRef = useRef<Array<() => void>>([]);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -243,30 +242,11 @@ export default function Settings() {
     const contextualSaveBar = ContextualSaveBarActions.create(app, { fullWidth: true });
     contextualSaveBarRef.current = contextualSaveBar;
 
-    const unsubscribers: Array<() => void> = [];
-    if (ContextualSaveBarActions.Action.SAVE) {
-      unsubscribers.push(
-        contextualSaveBar.subscribe(ContextualSaveBarActions.Action.SAVE, handleSave),
-      );
-    }
-    if (ContextualSaveBarActions.Action.DISCARD) {
-      unsubscribers.push(
-        contextualSaveBar.subscribe(ContextualSaveBarActions.Action.DISCARD, handleDiscard),
-      );
-    }
-    contextualSaveBarUnsubRef.current = unsubscribers;
-
     return () => {
       contextualSaveBar.dispatch(ContextualSaveBarActions.Action.HIDE);
       contextualSaveBarRef.current = null;
-      contextualSaveBarUnsubRef.current.forEach((unsubscribe) => {
-        try {
-          unsubscribe?.();
-        } catch {}
-      });
-      contextualSaveBarUnsubRef.current = [];
     };
-  }, [app, handleDiscard, handleSave]);
+  }, [app]);
 
   useEffect(() => {
     const contextualSaveBar = contextualSaveBarRef.current;
@@ -274,10 +254,12 @@ export default function Settings() {
 
     contextualSaveBar.set({
       saveAction: {
+        onAction: handleSave,
         loading: isSubmitting,
         disabled: !isDirty,
       },
       discardAction: {
+        onAction: handleDiscard,
         disabled: !isDirty || isSubmitting,
       },
     });
@@ -288,7 +270,7 @@ export default function Settings() {
         ? ContextualSaveBarActions.Action.SHOW
         : ContextualSaveBarActions.Action.HIDE,
     );
-  }, [isDirty, isSubmitting]);
+  }, [handleDiscard, handleSave, isDirty, isSubmitting]);
 
   const pagePrimaryAction = useMemo(
     () => ({
