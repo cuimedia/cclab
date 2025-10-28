@@ -264,7 +264,7 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
         saveBarRef.current = SaveBarAction.create(app, { visible: false });
         if (!cancelled) setSaveBarReady(true);
       } catch (err) {
-        console.warn("Failed to initialize SaveBar", err);
+        console.error("Failed to initialize SaveBar", err);
       }
     };
 
@@ -297,7 +297,7 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      console.debug("[SaveBar]", {
+      console.log("[SaveBar] status", {
         appReady: !!app,
         saveBarReady,
         hasSaveBar: !!saveBarRef.current,
@@ -358,7 +358,7 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={15}
-                    helpText="Enter your full international number (6â€“15 digits, digits only)."
+                    helpText="Enter your full international number (6â€?5 digits, digits only)."
                     error={actionData?.errors?.number}
                     requiredIndicator
                   />
