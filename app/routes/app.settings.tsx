@@ -22,6 +22,7 @@ import {
   useBreakpoints,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
 
 const resolveSaveBar = (): SaveBarAction | undefined => {
   const mod: any = appBridgeActions;
