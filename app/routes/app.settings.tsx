@@ -18,7 +18,6 @@ import {
   Select,
   Text,
   TextField,
-  useBreakpoints,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
@@ -215,11 +214,15 @@ export default function Settings() {
   };
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
-  const { mdUp } = useBreakpoints();
-  const canUseContextualSaveBar = useMemo(
-    () => !!app && typeof (app as any).dispatch === "function",
-    [app],
-  );
+  const canUseContextualSaveBar = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    // 仅在嵌入到 Shopify Admin 的 iframe 中，且 URL 带有 embedded=1 时，才尝试显示 App Bridge SaveBar
+    const isEmbedded = window.top !== window.self;
+    const search = new URLSearchParams(window.location.search);
+    const embeddedParam = search.get("embedded");
+    const hasBridge = !!app && typeof (app as any).dispatch === "function";
+    return isEmbedded && embeddedParam === "1" && hasBridge;
+  }, [app]);
   const showContextualSaveBar = canUseContextualSaveBar && (isDirty || isSubmitting);
 
   useEffect(() => {
@@ -449,8 +452,6 @@ export default function Settings() {
                       flexDirection: "column",
                       gap: "12px",
                       alignItems: "flex-start",
-                      borderLeft: mdUp ? "1px solid var(--p-color-border-subdued, rgba(0,0,0,0.1))" : undefined,
-                      paddingLeft: mdUp ? "16px" : "0",
                     }}
                   >
                     <Text as="span" variant="bodyMd" tone="subdued">
