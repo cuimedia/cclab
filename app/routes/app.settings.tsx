@@ -3,8 +3,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import type { SaveBar as SaveBarApi } from "@shopify/app-bridge/actions";
-import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
+import { ContextualSaveBar as ContextualSaveBarActions } from "@shopify/app-bridge/actions";
+import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
   Box,
@@ -148,8 +148,8 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  const saveBarRef = useRef<ReturnType<NonNullable<SaveBarApi>["create"]> | null>(null);
-  const saveBarModuleRef = useRef<Promise<SaveBarApi | undefined> | null>(null);
+  const contextualSaveBarRef = useRef<ReturnType<typeof ContextualSaveBarActions.create> | null>(null);
+  const contextualSaveBarUnsubRef = useRef<Array<() => void>>([]);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -185,12 +185,6 @@ export default function Settings() {
   const serializedInitial = useMemo(() => JSON.stringify(initialValues), [initialValues]);
   const serializedCurrent = useMemo(() => JSON.stringify(formState), [formState]);
   const isDirty = serializedInitial !== serializedCurrent;
-  const loadSaveBar = useCallback(async (): Promise<SaveBarApi | undefined> => {
-    if (!saveBarModuleRef.current) {
-      saveBarModuleRef.current = import("@shopify/app-bridge/actions").then((mod: any) => mod?.SaveBar ?? mod?.default?.SaveBar);
-    }
-    return saveBarModuleRef.current;
-  }, []);
 
   const handleColorInput =
     (field: "bg_color" | "icon_color") =>
@@ -223,7 +217,7 @@ export default function Settings() {
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
   const { mdUp } = useBreakpoints();
-  const [saveBarReady, setSaveBarReady] = useState(false);
+  const showContextualSaveBar = isDirty || isSubmitting;
 
   useEffect(() => {
     if (actionData?.values) {
@@ -244,71 +238,53 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    if (!app) {
-      saveBarRef.current?.setVisibility(false);
-      saveBarRef.current = null;
-      setSaveBarReady(false);
-      return;
+    if (!app) return;
+
+    const contextualSaveBar = ContextualSaveBarActions.create(app, { fullWidth: true });
+    contextualSaveBarRef.current = contextualSaveBar;
+
+    const unsubscribers: Array<() => void> = [];
+    if (ContextualSaveBarActions.Action.SAVE) {
+      unsubscribers.push(app.subscribe(ContextualSaveBarActions.Action.SAVE, handleSave));
     }
-
-    let cancelled = false;
-
-    const ensureSaveBar = async () => {
-      if (saveBarRef.current || cancelled) {
-        setSaveBarReady(!!saveBarRef.current);
-        return;
-      }
-      try {
-        const SaveBarAction = await loadSaveBar();
-        if (!SaveBarAction) {
-          console.warn("[SaveBar] export missing from @shopify/app-bridge/actions");
-          return;
-        }
-        if (cancelled) return;
-        saveBarRef.current = SaveBarAction.create(app, { visible: false });
-        console.log("[SaveBar] create");
-        if (!cancelled) setSaveBarReady(true);
-      } catch (err) {
-        console.warn("Failed to initialize SaveBar", err);
-      }
-    };
-
-    ensureSaveBar();
+    if (ContextualSaveBarActions.Action.DISCARD) {
+      unsubscribers.push(app.subscribe(ContextualSaveBarActions.Action.DISCARD, handleDiscard));
+    }
+    contextualSaveBarUnsubRef.current = unsubscribers;
 
     return () => {
-      cancelled = true;
-      saveBarRef.current?.setVisibility(false);
-      saveBarRef.current = null;
-      setSaveBarReady(false);
+      contextualSaveBar.dispatch(ContextualSaveBarActions.Action.HIDE);
+      contextualSaveBarRef.current = null;
+      contextualSaveBarUnsubRef.current.forEach((unsubscribe) => {
+        try {
+          unsubscribe?.();
+        } catch {}
+      });
+      contextualSaveBarUnsubRef.current = [];
     };
-  }, [app, loadSaveBar]);
+  }, [app, handleDiscard, handleSave]);
 
   useEffect(() => {
-    if (!app || !saveBarReady || !saveBarRef.current) return;
-    const saveBar = saveBarRef.current;
-    saveBar.set({
+    const contextualSaveBar = contextualSaveBarRef.current;
+    if (!contextualSaveBar) return;
+
+    contextualSaveBar.set({
       saveAction: {
-        onAction: handleSave,
         loading: isSubmitting,
         disabled: !isDirty,
       },
       discardAction: {
-        onAction: handleDiscard,
         disabled: !isDirty || isSubmitting,
       },
     });
-    saveBar.setVisibility(isDirty || isSubmitting);
-  }, [app, handleDiscard, handleSave, isDirty, isSubmitting, saveBarReady]);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      console.log("[SaveBar] status", {
-        appReady: !!app,
-        saveBarReady,
-        hasSaveBar: !!saveBarRef.current,
-      });
-    }
-  }, [app, saveBarReady]);
+    const shouldShow = isDirty || isSubmitting;
+    contextualSaveBar.dispatch(
+      shouldShow
+        ? ContextualSaveBarActions.Action.SHOW
+        : ContextualSaveBarActions.Action.HIDE,
+    );
+  }, [isDirty, isSubmitting]);
 
   const pagePrimaryAction = useMemo(
     () => ({
@@ -331,7 +307,7 @@ export default function Settings() {
     [handleDiscard, isDirty, isSubmitting],
   );
 
-  const pageActionProps = saveBarReady
+  const pageActionProps = showContextualSaveBar
     ? {}
     : {
         primaryAction: pagePrimaryAction,
