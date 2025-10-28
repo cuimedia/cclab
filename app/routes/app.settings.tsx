@@ -22,9 +22,19 @@ import {
   useBreakpoints,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
-import prisma from "../db.server";
 
-const { SaveBar } = appBridgeActions as { SaveBar: SaveBarAction };
+const resolveSaveBar = (): SaveBarAction | undefined => {
+  const mod: any = appBridgeActions;
+  return (
+    mod?.SaveBar ??
+    mod?.ContextualSaveBar ??
+    mod?.default?.SaveBar ??
+    mod?.default?.ContextualSaveBar
+  );
+};
+
+type SaveBarModule = NonNullable<ReturnType<typeof resolveSaveBar>>;
+type SaveBarInstance = ReturnType<SaveBarModule["create"]>;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { admin } = await authenticate.admin(request);
@@ -151,7 +161,6 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  type SaveBarInstance = ReturnType<SaveBarAction["create"]>;
   const saveBarRef = useRef<SaveBarInstance | null>(null);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
@@ -255,7 +264,7 @@ export default function Settings() {
         setSaveBarReady(!!saveBarRef.current);
         return;
       }
-      const SaveBarClass = (appBridgeActions as any).SaveBar ?? (appBridgeActions as any).default?.SaveBar;
+      const SaveBarClass = resolveSaveBar();
       if (!SaveBarClass) {
         console.error("[SaveBar] export missing", appBridgeActions);
         return;
@@ -588,6 +597,7 @@ export default function Settings() {
     </Page>
   );
 }
+
 
 
 
