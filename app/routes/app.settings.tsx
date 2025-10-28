@@ -3,7 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import type { SaveBar as SaveBarApi } from "@shopify/app-bridge/actions";
+import { SaveBar } from "@shopify/app-bridge/actions";
 import { useEffect, useMemo, useState, useRef, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
@@ -148,14 +148,7 @@ export default function Settings() {
   const navigation = useNavigation();
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-const saveBarRef = useRef<ReturnType<NonNullable<SaveBarApi>["create"]> | null>(null);
-const saveBarModuleRef = useRef<Promise<SaveBarApi | undefined> | null>(null);
-const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
-  if (!saveBarModuleRef.current) {
-    saveBarModuleRef.current = import("@shopify/app-bridge/actions").then((mod: any) => mod?.SaveBar ?? mod?.default?.SaveBar);
-  }
-  return saveBarModuleRef.current;
-};
+  const saveBarRef = useRef<ReturnType<typeof SaveBar.create> | null>(null);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -253,24 +246,21 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
 
     let cancelled = false;
 
-    const ensureSaveBar = async () => {
+    const ensureSaveBar = () => {
       if (saveBarRef.current || cancelled) {
         setSaveBarReady(!!saveBarRef.current);
         return;
       }
       try {
-        const SaveBarAction = await loadSaveBar();
-        if (!SaveBarAction || cancelled) {
-          console.warn("[SaveBar] module missing", { SaveBarAction, cancelled });
-          return;
-        }
-        console.log("[SaveBar] create", SaveBarAction);
-          saveBarRef.current = SaveBarAction.create(app, { visible: false });
+        saveBarRef.current = SaveBar.create(app, { visible: false });
+        console.log("[SaveBar] create");
         if (!cancelled) setSaveBarReady(true);
       } catch (err) {
         console.error("Failed to initialize SaveBar", err);
       }
     };
+
+    ensureSaveBar();
 
     ensureSaveBar();
 
@@ -311,7 +301,7 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
 
   const pagePrimaryAction = useMemo(
     () => ({
-      content: "保存",
+      content: "????",
       onAction: handleSave,
       loading: isSubmitting,
       disabled: !isDirty,
@@ -322,7 +312,7 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
   const pageSecondaryActions = useMemo(
     () => [
       {
-        content: "放弃更改",
+        content: "????????",
         onAction: handleDiscard,
         disabled: !isDirty || isSubmitting,
       },
@@ -362,7 +352,7 @@ const loadSaveBar = async (): Promise<SaveBarApi | undefined> => {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={15}
-                    helpText="Enter your full international number (6�?5 digits, digits only)."
+                    helpText="Enter your full international number (6??5 digits, digits only)."
                     error={actionData?.errors?.number}
                     requiredIndicator
                   />
