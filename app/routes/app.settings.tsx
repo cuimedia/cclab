@@ -245,10 +245,14 @@ export default function Settings() {
 
     const unsubscribers: Array<() => void> = [];
     if (ContextualSaveBarActions.Action.SAVE) {
-      unsubscribers.push(app.subscribe(ContextualSaveBarActions.Action.SAVE, handleSave));
+      unsubscribers.push(
+        contextualSaveBar.subscribe(ContextualSaveBarActions.Action.SAVE, handleSave),
+      );
     }
     if (ContextualSaveBarActions.Action.DISCARD) {
-      unsubscribers.push(app.subscribe(ContextualSaveBarActions.Action.DISCARD, handleDiscard));
+      unsubscribers.push(
+        contextualSaveBar.subscribe(ContextualSaveBarActions.Action.DISCARD, handleDiscard),
+      );
     }
     contextualSaveBarUnsubRef.current = unsubscribers;
 
