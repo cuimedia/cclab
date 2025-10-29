@@ -118,7 +118,15 @@ export async function action({ request }: ActionFunctionArgs) {
       update: { config: cfg },
     });
 
-    return redirect("/app?saved=1");
+    // Preserve Shopify embedding params to avoid reload/redirect loops
+    const currentUrl = new URL(request.url);
+    const to = new URL("/app", currentUrl.origin);
+    to.searchParams.set("saved", "1");
+    const hostParam = currentUrl.searchParams.get("host");
+    const embeddedParam = currentUrl.searchParams.get("embedded");
+    if (hostParam) to.searchParams.set("host", hostParam);
+    if (embeddedParam) to.searchParams.set("embedded", embeddedParam);
+    return redirect(to.toString());
   } catch (err) {
     console.error("settings action error", err);
     throw err;
