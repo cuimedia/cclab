@@ -348,12 +348,20 @@ export default function Settings() {
     return flags;
   }, [app, canUseContextualSaveBar, showContextualSaveBar, isDirty, isSubmitting]);
 
-  const showDebug = useMemo(() => {
-    if (typeof window === "undefined") return false;
+  const [showDebug, setShowDebug] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const force = params.get("debug") === "1";
-    return process.env.NODE_ENV !== "production" || force;
+    const shouldShow = (process.env.NODE_ENV !== "production") || force;
+    setShowDebug(shouldShow);
   }, []);
+
+  useEffect(() => {
+    if (!devFlags) return;
+    // eslint-disable-next-line no-console
+    console.log("[wa-float:settings SaveBar flags]", devFlags);
+  }, [devFlags]);
 
   return (
     <Page title="WhatsApp Float Settings" {...pageActionProps}>
