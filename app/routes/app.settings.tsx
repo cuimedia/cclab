@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }
       }
     `);
-    const payload = await r.json();
+    const payload: any = await r.json();
     if (payload.errors?.length) {
       console.error("loader shop query errors", JSON.stringify(payload.errors, null, 2));
       throw new Error(payload.errors.map((e: any) => e.message).join("; "));
@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
     `);
-    const payload = await domainResp.json();
+    const payload: any = await domainResp.json();
     if (payload.errors?.length) {
       console.error("action shop query errors", JSON.stringify(payload.errors, null, 2));
       throw new Error(payload.errors.map((e: any) => e.message).join("; "));
@@ -148,6 +148,8 @@ export default function Settings() {
   const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
   const contextualSaveBarRef = useRef<ReturnType<typeof ContextualSaveBarActions.create> | null>(null);
+  const unsubscribeSaveRef = useRef<(() => void) | null>(null);
+  const unsubscribeDiscardRef = useRef<(() => void) | null>(null);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -214,13 +216,18 @@ export default function Settings() {
   };
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
+  const clientApp = useMemo(() => {
+    const maybeApp = app as any;
+    return maybeApp?.app || maybeApp || null;
+  }, [app]);
+
   const canUseContextualSaveBar = useMemo(() => {
     if (typeof window === "undefined") return false;
     // 在 Shopify Admin 的 iframe 中，并且 App Bridge 可用时启用 SaveBar
     const isEmbedded = window.top !== window.self;
-    const hasBridge = !!app && typeof (app as any).dispatch === "function";
+    const hasBridge = !!clientApp && typeof (clientApp as any).dispatch === "function";
     return isEmbedded && hasBridge;
-  }, [app]);
+  }, [clientApp]);
   const showContextualSaveBar = canUseContextualSaveBar && (isDirty || isSubmitting);
 
   useEffect(() => {
@@ -242,16 +249,20 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
-    if (!canUseContextualSaveBar || !app) return;
+    if (!canUseContextualSaveBar || !clientApp) return;
 
-    const contextualSaveBar = ContextualSaveBarActions.create(app, { fullWidth: true });
+    const contextualSaveBar = ContextualSaveBarActions.create(clientApp, { fullWidth: true });
     contextualSaveBarRef.current = contextualSaveBar;
 
     return () => {
       contextualSaveBar.dispatch(ContextualSaveBarActions.Action.HIDE);
       contextualSaveBarRef.current = null;
+      unsubscribeSaveRef.current?.();
+      unsubscribeSaveRef.current = null;
+      unsubscribeDiscardRef.current?.();
+      unsubscribeDiscardRef.current = null;
     };
-  }, [app, canUseContextualSaveBar]);
+  }, [clientApp, canUseContextualSaveBar]);
 
   useEffect(() => {
     if (!canUseContextualSaveBar) return;
@@ -261,12 +272,10 @@ export default function Settings() {
 
     contextualSaveBar.set({
       saveAction: {
-        onAction: handleSave,
         loading: isSubmitting,
         disabled: !isDirty,
       },
       discardAction: {
-        onAction: handleDiscard,
         disabled: !isDirty || isSubmitting,
       },
     });
@@ -277,6 +286,17 @@ export default function Settings() {
         ? ContextualSaveBarActions.Action.SHOW
         : ContextualSaveBarActions.Action.HIDE,
     );
+    // Re-bind events when dependencies change
+    unsubscribeSaveRef.current?.();
+    unsubscribeSaveRef.current = contextualSaveBar.subscribe(
+      ContextualSaveBarActions.Action.SAVE,
+      handleSave,
+    ) as unknown as (() => void) | null;
+    unsubscribeDiscardRef.current?.();
+    unsubscribeDiscardRef.current = contextualSaveBar.subscribe(
+      ContextualSaveBarActions.Action.DISCARD,
+      handleDiscard,
+    ) as unknown as (() => void) | null;
   }, [canUseContextualSaveBar, handleDiscard, handleSave, isDirty, isSubmitting]);
 
   const pagePrimaryAction = useMemo(
@@ -312,14 +332,14 @@ export default function Settings() {
       <Layout>
         <Layout.Section>
           {saved && (
-            <Box marginBlockEnd="400" style={{ marginBottom: "16px" }}>
-              <Banner status="success" title="Settings saved">
+            <div style={{ marginBottom: "16px" }}>
+              <Banner tone="success" title="Settings saved">
                 Floating button updated with your latest settings
                 {formattedUpdatedAt ? ` (Saved at: ${formattedUpdatedAt})` : "."}
               </Banner>
-            </Box>
+            </div>
           )}
-          <Card sectioned>
+          <Card>
             <Form method="post" ref={formRef}>
               <FormLayout>
                 <FormLayout.Group>
@@ -354,6 +374,7 @@ export default function Settings() {
                   value={formState.message}
                   onChange={updateField("message")}
                   multiline={4}
+                  autoComplete="off"
                 />
 
                 <FormLayout.Group>
@@ -376,6 +397,7 @@ export default function Settings() {
                     max={80}
                     value={formState.offset_x}
                     onChange={updateField("offset_x")}
+                    autoComplete="off"
                   />
                   <TextField
                     label="Vertical offset Y"
@@ -385,6 +407,7 @@ export default function Settings() {
                     max={120}
                     value={formState.offset_y}
                     onChange={updateField("offset_y")}
+                    autoComplete="off"
                   />
                 </FormLayout.Group>
 
@@ -444,14 +467,7 @@ export default function Settings() {
                       </div>
                     </FormLayout>
                   </Box>
-                  <Box
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                      alignItems: "flex-start",
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "flex-start" }}>
                     <Text as="span" variant="bodyMd" tone="subdued">
                       Button preview
                     </Text>
@@ -480,10 +496,10 @@ export default function Settings() {
                         />
                       </svg>
                     </div>
-                    <Button onClick={resetColors} plain>
+                    <Button onClick={resetColors} variant="plain">
                       Reset to defaults
                     </Button>
-                  </Box>
+                  </div>
                 </InlineGrid>
 
                 <FormLayout.Group>
