@@ -357,6 +357,11 @@ export default function Settings() {
   if (typeof window !== "undefined" && devFlags) {
     // eslint-disable-next-line no-console
     console.log("[wa-float:settings SaveBar flags]", devFlags);
+    // 临时 alert 确保代码执行
+    if (window.location.search.includes("debug=1")) {
+      // eslint-disable-next-line no-alert
+      alert(`Debug: isEmbedded=${window.top !== window.self}, hasApp=${!!app}, hasDispatch=${typeof (app as any)?.dispatch === "function"}, isDirty=${isDirty}`);
+    }
   }
 
   return (
@@ -364,13 +369,14 @@ export default function Settings() {
       {/* 强制显示调试信息 */}
       <div style={{ marginBottom: "8px", padding: "8px", background: "#f0f0f0", border: "1px solid #ccc" }}>
         <div><strong>Debug Info:</strong></div>
-        <div>isEmbedded: {String(window?.top !== window?.self)}</div>
+        <div>isEmbedded: {String(typeof window !== "undefined" && window.top !== window.self)}</div>
         <div>hasApp: {String(!!app)}</div>
         <div>hasDispatch: {String(typeof (app as any)?.dispatch === "function")}</div>
         <div>canUseContextualSaveBar: {String(canUseContextualSaveBar)}</div>
         <div>showContextualSaveBar: {String(showContextualSaveBar)}</div>
         <div>isDirty: {String(isDirty)}</div>
         <div>isSubmitting: {String(isSubmitting)}</div>
+        <div>URL: {typeof window !== "undefined" ? window.location.href : "SSR"}</div>
       </div>
       <Layout>
         <Layout.Section>
