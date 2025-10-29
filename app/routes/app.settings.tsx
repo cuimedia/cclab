@@ -2,8 +2,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react";
-import { useAppBridge } from "@shopify/app-bridge-react";
-import { ContextualSaveBar as ContextualSaveBarActions } from "@shopify/app-bridge/actions";
+// SaveBar 相关逻辑已移除，仅使用 Page 的 action 按钮
 import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent } from "react";
 import {
   Banner,
@@ -153,11 +152,7 @@ export default function Settings() {
   const { cfg, saved, updatedAt } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
-  const app = useAppBridge();
   const formRef = useRef<HTMLFormElement>(null);
-  const contextualSaveBarRef = useRef<ReturnType<typeof ContextualSaveBarActions.create> | null>(null);
-  const unsubscribeSaveRef = useRef<(() => void) | null>(null);
-  const unsubscribeDiscardRef = useRef<(() => void) | null>(null);
   const isSubmitting = navigation.state === "submitting";
   const formattedUpdatedAt = formatDateTime(updatedAt);
   const defaults = {
@@ -224,19 +219,6 @@ export default function Settings() {
   };
 
   const previewSizePx = useMemo(() => Number(formState.size) || 56, [formState.size]);
-  const clientApp = useMemo(() => {
-    const maybeApp = app as any;
-    return maybeApp?.app || maybeApp || null;
-  }, [app]);
-
-  const canUseContextualSaveBar = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    // 在 Shopify Admin 的 iframe 中，并且 App Bridge 可用时启用 SaveBar
-    const isEmbedded = window.top !== window.self;
-    const hasBridge = !!clientApp && typeof (clientApp as any).dispatch === "function";
-    return isEmbedded && hasBridge;
-  }, [clientApp]);
-  const showContextualSaveBar = canUseContextualSaveBar && (isDirty || isSubmitting);
 
   useEffect(() => {
     if (actionData?.values) {
@@ -256,56 +238,7 @@ export default function Settings() {
     formRef.current?.requestSubmit();
   }, []);
 
-  useEffect(() => {
-    if (!canUseContextualSaveBar || !clientApp) return;
-
-    const contextualSaveBar = ContextualSaveBarActions.create(clientApp, { fullWidth: true });
-    contextualSaveBarRef.current = contextualSaveBar;
-
-    return () => {
-      contextualSaveBar.dispatch(ContextualSaveBarActions.Action.HIDE);
-      contextualSaveBarRef.current = null;
-      unsubscribeSaveRef.current?.();
-      unsubscribeSaveRef.current = null;
-      unsubscribeDiscardRef.current?.();
-      unsubscribeDiscardRef.current = null;
-    };
-  }, [clientApp, canUseContextualSaveBar]);
-
-  useEffect(() => {
-    if (!canUseContextualSaveBar) return;
-
-    const contextualSaveBar = contextualSaveBarRef.current;
-    if (!contextualSaveBar) return;
-
-    contextualSaveBar.set({
-      saveAction: {
-        loading: isSubmitting,
-        disabled: !isDirty,
-      },
-      discardAction: {
-        disabled: !isDirty || isSubmitting,
-      },
-    });
-
-    const shouldShow = isDirty || isSubmitting;
-    contextualSaveBar.dispatch(
-      shouldShow
-        ? ContextualSaveBarActions.Action.SHOW
-        : ContextualSaveBarActions.Action.HIDE,
-    );
-    // Re-bind events when dependencies change
-    unsubscribeSaveRef.current?.();
-    unsubscribeSaveRef.current = contextualSaveBar.subscribe(
-      ContextualSaveBarActions.Action.SAVE,
-      handleSave,
-    ) as unknown as (() => void) | null;
-    unsubscribeDiscardRef.current?.();
-    unsubscribeDiscardRef.current = contextualSaveBar.subscribe(
-      ContextualSaveBarActions.Action.DISCARD,
-      handleDiscard,
-    ) as unknown as (() => void) | null;
-  }, [canUseContextualSaveBar, handleDiscard, handleSave, isDirty, isSubmitting]);
+  // SaveBar 逻辑已移除
 
   const pagePrimaryAction = useMemo(
     () => ({
@@ -328,58 +261,16 @@ export default function Settings() {
     [handleDiscard, isDirty, isSubmitting],
   );
 
-  const pageActionProps = showContextualSaveBar
-    ? {}
-    : {
-        primaryAction: pagePrimaryAction,
-        secondaryActions: pageSecondaryActions,
-      };
+  const pageActionProps = {
+    primaryAction: pagePrimaryAction,
+    secondaryActions: pageSecondaryActions,
+  } as const;
 
-  // 简化调试逻辑，避免复杂的 useMemo 和 useEffect
-  const [debugInfo, setDebugInfo] = useState<any>(null);
-  
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    const params = new URLSearchParams(window.location.search);
-    const force = params.get("debug") === "1";
-    const shouldShow = process.env.NODE_ENV !== "production" || force;
-    
-    if (shouldShow) {
-      const raw = app as any;
-      const candidate = raw?.dispatch ? raw : raw?.app;
-      const flags = {
-        isEmbedded: window.top !== window.self,
-        hasApp: !!app,
-        hasDispatchOnApp: typeof raw?.dispatch === "function",
-        hasDispatchOnAppApp: typeof raw?.app?.dispatch === "function",
-        usingClientApp: !!candidate,
-        canUseContextualSaveBar,
-        showContextualSaveBar,
-        isDirty,
-        isSubmitting,
-      };
-      setDebugInfo(flags);
-      // eslint-disable-next-line no-console
-      console.log("[wa-float:settings SaveBar flags]", flags);
-    }
-  }, [app, canUseContextualSaveBar, showContextualSaveBar, isDirty, isSubmitting]);
+  // 调试信息与 SaveBar 相关代码已移除
 
   return (
     <Page title="WhatsApp Float Settings" {...pageActionProps}>
-      {/* 强制显示调试信息 */}
-      {debugInfo && (
-        <div style={{ marginBottom: "8px", padding: "8px", background: "#f0f0f0", border: "1px solid #ccc" }}>
-          <div><strong>Debug Info:</strong></div>
-          <div>isEmbedded: {String(debugInfo.isEmbedded)}</div>
-          <div>hasApp: {String(debugInfo.hasApp)}</div>
-          <div>hasDispatch: {String(debugInfo.hasDispatchOnApp || debugInfo.hasDispatchOnAppApp)}</div>
-          <div>canUseContextualSaveBar: {String(debugInfo.canUseContextualSaveBar)}</div>
-          <div>showContextualSaveBar: {String(debugInfo.showContextualSaveBar)}</div>
-          <div>isDirty: {String(debugInfo.isDirty)}</div>
-          <div>isSubmitting: {String(debugInfo.isSubmitting)}</div>
-        </div>
-      )}
+      {/* SaveBar 调试区已移除 */}
       <Layout>
         <Layout.Section>
           {saved && (
