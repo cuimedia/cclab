@@ -327,56 +327,49 @@ export default function Settings() {
         secondaryActions: pageSecondaryActions,
       };
 
-  const devFlags = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    const raw = app as any;
-    const candidate = raw?.dispatch ? raw : raw?.app;
-    const flags = {
-      isEmbedded: window.top !== window.self,
-      hasApp: !!app,
-      hasDispatchOnApp: typeof raw?.dispatch === "function",
-      hasDispatchOnAppApp: typeof raw?.app?.dispatch === "function",
-      usingClientApp: !!candidate,
-      canUseContextualSaveBar,
-      showContextualSaveBar,
-      isDirty,
-      isSubmitting,
-    };
-    // 始终在控制台打印，便于排查（带明确前缀）
-    // eslint-disable-next-line no-console
-    console.debug("[wa-float:settings SaveBar flags]", flags);
-    return flags;
-  }, [app, canUseContextualSaveBar, showContextualSaveBar, isDirty, isSubmitting]);
-
-  // 简化调试逻辑，使用 useEffect 避免 SSR 问题
-  const [showDebug, setShowDebug] = useState(false);
+  // 简化调试逻辑，避免复杂的 useMemo 和 useEffect
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   
   useEffect(() => {
     if (typeof window === "undefined") return;
+    
     const params = new URLSearchParams(window.location.search);
     const force = params.get("debug") === "1";
-    setShowDebug(process.env.NODE_ENV !== "production" || force);
-  }, []);
-  
-  useEffect(() => {
-    if (!devFlags) return;
-    // eslint-disable-next-line no-console
-    console.log("[wa-float:settings SaveBar flags]", devFlags);
-  }, [devFlags]);
+    const shouldShow = process.env.NODE_ENV !== "production" || force;
+    
+    if (shouldShow) {
+      const raw = app as any;
+      const candidate = raw?.dispatch ? raw : raw?.app;
+      const flags = {
+        isEmbedded: window.top !== window.self,
+        hasApp: !!app,
+        hasDispatchOnApp: typeof raw?.dispatch === "function",
+        hasDispatchOnAppApp: typeof raw?.app?.dispatch === "function",
+        usingClientApp: !!candidate,
+        canUseContextualSaveBar,
+        showContextualSaveBar,
+        isDirty,
+        isSubmitting,
+      };
+      setDebugInfo(flags);
+      // eslint-disable-next-line no-console
+      console.log("[wa-float:settings SaveBar flags]", flags);
+    }
+  }, [app, canUseContextualSaveBar, showContextualSaveBar, isDirty, isSubmitting]);
 
   return (
     <Page title="WhatsApp Float Settings" {...pageActionProps}>
       {/* 强制显示调试信息 */}
-      {showDebug && (
+      {debugInfo && (
         <div style={{ marginBottom: "8px", padding: "8px", background: "#f0f0f0", border: "1px solid #ccc" }}>
           <div><strong>Debug Info:</strong></div>
-          <div>isEmbedded: {String(devFlags?.isEmbedded || false)}</div>
-          <div>hasApp: {String(devFlags?.hasApp || false)}</div>
-          <div>hasDispatch: {String(devFlags?.hasDispatchOnApp || devFlags?.hasDispatchOnAppApp || false)}</div>
-          <div>canUseContextualSaveBar: {String(devFlags?.canUseContextualSaveBar || false)}</div>
-          <div>showContextualSaveBar: {String(devFlags?.showContextualSaveBar || false)}</div>
-          <div>isDirty: {String(devFlags?.isDirty || false)}</div>
-          <div>isSubmitting: {String(devFlags?.isSubmitting || false)}</div>
+          <div>isEmbedded: {String(debugInfo.isEmbedded)}</div>
+          <div>hasApp: {String(debugInfo.hasApp)}</div>
+          <div>hasDispatch: {String(debugInfo.hasDispatchOnApp || debugInfo.hasDispatchOnAppApp)}</div>
+          <div>canUseContextualSaveBar: {String(debugInfo.canUseContextualSaveBar)}</div>
+          <div>showContextualSaveBar: {String(debugInfo.showContextualSaveBar)}</div>
+          <div>isDirty: {String(debugInfo.isDirty)}</div>
+          <div>isSubmitting: {String(debugInfo.isSubmitting)}</div>
         </div>
       )}
       <Layout>
