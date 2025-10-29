@@ -119,7 +119,21 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Preserve Shopify embedding params to avoid reload/redirect loops
     const currentUrl = new URL(request.url);
-    const to = new URL("/app", currentUrl.origin);
+    // Build target path relative to current proxied path, not site root
+    // e.g. /store/.../apps/<app>/app/settings -> /store/.../apps/<app>/app
+    let targetPath = currentUrl.pathname;
+    if (targetPath.endsWith("/settings")) {
+      targetPath = targetPath.slice(0, -"/settings".length);
+    }
+    // Ensure ends with /app
+    if (!targetPath.endsWith("/app")) {
+      if (targetPath.endsWith("/app/")) {
+        targetPath = targetPath.slice(0, -1);
+      } else {
+        targetPath = targetPath + "/app";
+      }
+    }
+    const to = new URL(targetPath, currentUrl.origin);
     to.searchParams.set("saved", "1");
     const hostParam = currentUrl.searchParams.get("host");
     const embeddedParam = currentUrl.searchParams.get("embedded");
