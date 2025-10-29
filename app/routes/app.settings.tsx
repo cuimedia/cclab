@@ -327,8 +327,39 @@ export default function Settings() {
         secondaryActions: pageSecondaryActions,
       };
 
+  const devFlags = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const raw = app as any;
+    const candidate = raw?.dispatch ? raw : raw?.app;
+    const flags = {
+      isEmbedded: window.top !== window.self,
+      hasApp: !!app,
+      hasDispatchOnApp: typeof raw?.dispatch === "function",
+      hasDispatchOnAppApp: typeof raw?.app?.dispatch === "function",
+      usingClientApp: !!candidate,
+      canUseContextualSaveBar,
+      showContextualSaveBar,
+      isDirty,
+      isSubmitting,
+    };
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.debug("[settings SaveBar flags]", flags);
+    }
+    return flags;
+  }, [app, canUseContextualSaveBar, showContextualSaveBar, isDirty, isSubmitting]);
+
   return (
     <Page title="WhatsApp Float Settings" {...pageActionProps}>
+      {process.env.NODE_ENV !== "production" && devFlags && (
+        <div style={{ marginBottom: "8px" }}>
+          <Banner tone="info" title="Debug: SaveBar flags">
+            <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
+              {JSON.stringify(devFlags)}
+            </div>
+          </Banner>
+        </div>
+      )}
       <Layout>
         <Layout.Section>
           {saved && (
