@@ -348,32 +348,30 @@ export default function Settings() {
     return flags;
   }, [app, canUseContextualSaveBar, showContextualSaveBar, isDirty, isSubmitting]);
 
-  const [showDebug, setShowDebug] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const force = params.get("debug") === "1";
-    const shouldShow = (process.env.NODE_ENV !== "production") || force;
-    setShowDebug(shouldShow);
-  }, []);
-
-  useEffect(() => {
-    if (!devFlags) return;
+  // 简化调试逻辑，直接输出
+  const showDebug = typeof window !== "undefined" && 
+    (process.env.NODE_ENV !== "production" || 
+     new URLSearchParams(window.location.search).get("debug") === "1");
+  
+  // 直接输出调试信息
+  if (typeof window !== "undefined" && devFlags) {
     // eslint-disable-next-line no-console
     console.log("[wa-float:settings SaveBar flags]", devFlags);
-  }, [devFlags]);
+  }
 
   return (
     <Page title="WhatsApp Float Settings" {...pageActionProps}>
-      {showDebug && devFlags && (
-        <div style={{ marginBottom: "8px" }}>
-          <Banner tone="info" title="Debug: SaveBar flags">
-            <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
-              {JSON.stringify(devFlags)}
-            </div>
-          </Banner>
-        </div>
-      )}
+      {/* 强制显示调试信息 */}
+      <div style={{ marginBottom: "8px", padding: "8px", background: "#f0f0f0", border: "1px solid #ccc" }}>
+        <div><strong>Debug Info:</strong></div>
+        <div>isEmbedded: {String(window?.top !== window?.self)}</div>
+        <div>hasApp: {String(!!app)}</div>
+        <div>hasDispatch: {String(typeof (app as any)?.dispatch === "function")}</div>
+        <div>canUseContextualSaveBar: {String(canUseContextualSaveBar)}</div>
+        <div>showContextualSaveBar: {String(showContextualSaveBar)}</div>
+        <div>isDirty: {String(isDirty)}</div>
+        <div>isSubmitting: {String(isSubmitting)}</div>
+      </div>
       <Layout>
         <Layout.Section>
           {saved && (
