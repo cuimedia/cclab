@@ -342,16 +342,22 @@ export default function Settings() {
       isDirty,
       isSubmitting,
     };
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.debug("[settings SaveBar flags]", flags);
-    }
+    // 始终在控制台打印，便于排查（带明确前缀）
+    // eslint-disable-next-line no-console
+    console.debug("[wa-float:settings SaveBar flags]", flags);
     return flags;
   }, [app, canUseContextualSaveBar, showContextualSaveBar, isDirty, isSubmitting]);
 
+  const showDebug = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    const force = params.get("debug") === "1";
+    return process.env.NODE_ENV !== "production" || force;
+  }, []);
+
   return (
     <Page title="WhatsApp Float Settings" {...pageActionProps}>
-      {process.env.NODE_ENV !== "production" && devFlags && (
+      {showDebug && devFlags && (
         <div style={{ marginBottom: "8px" }}>
           <Banner tone="info" title="Debug: SaveBar flags">
             <div style={{ fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
