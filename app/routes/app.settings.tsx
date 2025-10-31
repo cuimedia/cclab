@@ -308,7 +308,7 @@ export default function Settings() {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={15}
-                    helpText="Enter your full international number (6??5 digits, digits only)."
+                    helpText="Enter your full international number (6 to 15 digits, digits only)."
                     error={actionData?.errors?.number}
                     requiredIndicator
                   />
